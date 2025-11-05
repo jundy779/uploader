@@ -233,6 +233,13 @@
             }}>Terms and Privacy Policy</a
         >
     </p>
+    <!--
+    <p class="maintenance">
+        ⚠️ Maintenance is in progress<br>
+        File uploading and deletion will be temporarily unavailable<br>
+        Estimated downtime is around X minutes
+    </p>
+    -->
     {#if /(kappa.lol|gachi.gay|femboy.beauty)$/.test($page.url.hostname) }
         <p style="display: inline-block; margin: 0;">
             <b>{$page.url.hostname}</b> is no longer hosted by me. Past files will not be recovered<br/>
@@ -283,6 +290,13 @@
         display: block;
         background: gray url("/static/upload.svg") no-repeat center;
         background-size: 30%;
+    }
+
+    .maintenance {
+        font-weight: 700;
+        border-left: 3px solid #ffcc32;
+        padding: 0 10px;
+        margin: 5px;
     }
 
     #file-input {

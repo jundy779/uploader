@@ -42,13 +42,20 @@
                     { method: "POST" },
                 );
 
+                if (res.status == 503) {
+                    notifyError(`Failed deleting "${file.name}": maintenance`);
+                    return
+                }
+
                 const data = await res.json();
 
-                loadFiles();
-                uploadedFiles.update((arr) => {
-                    return arr.filter((x) => x.id !== file.id);
-                });
-                saveFiles();
+                if (res.status == 200 || res.status == 400) {
+                    loadFiles();
+                    uploadedFiles.update((arr) => {
+                        return arr.filter((x) => x.id !== file.id);
+                    });
+                    saveFiles();
+                }
 
                 if (!data.success) throw data.message ?? JSON.stringify(data, null, 4);
             } catch (err) {

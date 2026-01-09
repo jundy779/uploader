@@ -7,20 +7,21 @@
     Support
 </h2>
 
-<p><b>segs.lol</b> is an entirely free and ad-less service sustained without profit in mind.<br />Every donation is greatly appreciated!</p>
+<p>This website is an entirely free and ad-less service sustained without profit in mind.<br />Every donation is greatly appreciated!</p>
 
 <p>
-    <b>Bitcoin:</b><br />
-    <code>bc1qj4f0r9fwyjptrpc22fhed29h3sd8ss8m6r7jvj</code>
+    <b>Stripe - USD (Card, Paypal, Apple, Google, USA Bank):</b><br />
+    <a href="https://donate.stripe.com/8x26oI2nQenr8Sv9FM1B600" target="_blank"><b>https://donate.stripe.com/8x26oI2nQenr8Sv9FM1B600</b></a>
 </p>
 
 <p>
-    <b>Monero:</b><br />
-    <code>42oX4zS59RG8vxD3gjiR2oT3YcXpoSgMuP45nhyyUa6XERR19XknyV1B7r7qeF1JwFWSuc5rkCmxEfJEoEcggmFVHjmUEtv</code>
+    <b>Stripe - EUR (Card, Paypal, Apple, Google, EU Bank):</b><br />
+    <a href="https://donate.stripe.com/14A7sM6E6a7bfgTdW21B601" target="_blank"><b>https://donate.stripe.com/14A7sM6E6a7bfgTdW21B601</b></a>
 </p>
 
 <p>
-    <a href="https://www.twitch.tv/subs/supelle" target="_blank" data-umami-event="twitch-sub-link"><b>Subscribe on Twitch</b></a>
+    <b>Ko-fi (Card, Paypal):</b><br />
+    <a href="https://ko-fi.com/MaldEntertainmentStudio" target="_blank"><b>https://ko-fi.com/MaldEntertainmentStudio</b></a>
 </p>
 
 <style lang="scss">

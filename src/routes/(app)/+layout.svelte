@@ -85,7 +85,6 @@
                             target="_blank">GitHub</a
                         >
                     </li>
-                    <!--
                     <li>
                         <a
                             class="support-btn"
@@ -99,7 +98,6 @@
                             Support
                         </a>
                     </li>
-                    -->
                 </ul>
             </div>
         </nav>
@@ -339,6 +337,14 @@
             margin-right: 2px;
             width: 1em;
             height: 1em;
+            animation: pulse 1.5s ease-in infinite alternate;
+        }
+
+        @keyframes pulse {
+            to {
+                transform: scale(1.25);
+                background-color: #c81919;
+            }
         }
 
         &:hover :global(.icon) {

@@ -1,0 +1,55 @@
+:root {
+    --bg: 250 250 252;
+    --bg_h: 244 244 247;
+    --bg0: 255 255 255;
+    --bg2: 238 238 242;
+    --fg: 18 20 24;
+    --fg2: 30 32 38;
+    --primary: 90 110 140;
+    --outl1: 210 214 222;
+    --outl2: 220 224 232;
+    --accent: 120 150 200;
+}
+
+body {
+    background-color: rgb(var(--bg));
+    color: rgb(var(--fg));
+}
+
+.wrapper,
+.file,
+.settings,
+dialog,
+.drop-zone {
+    background-color: rgb(var(--bg0));
+    border: 1px solid rgb(var(--outl2));
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgb(20 20 30 / 0.06);
+}
+
+button,
+.upload-label,
+.support-btn {
+    background-color: rgb(var(--bg2));
+    border: 1px solid rgb(var(--outl1));
+    border-radius: 8px;
+    color: rgb(var(--fg2));
+}
+
+input[type="text"] {
+    background-color: rgb(var(--bg0));
+    border: 1px solid rgb(var(--outl2));
+    border-radius: 8px;
+    color: rgb(var(--fg));
+}
+
+.file .details {
+    border: 1px solid rgb(var(--outl2));
+    border-radius: 8px;
+}
+
+hr {
+    border: 0;
+    height: 1px;
+    background-color: rgb(var(--outl2));
+}

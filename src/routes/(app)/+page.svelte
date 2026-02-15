@@ -1,7 +1,6 @@
 <script>
     import { page } from "$app/stores";
     import Dialog from "$lib/components/Dialog.svelte";
-    import Terms from "$lib/components/Terms.svelte";
     import { logError } from "$lib/components/errorLog";
     import Errors from "$lib/components/Errors.svelte";
     import { userSettings } from "$lib/userSettings";
@@ -13,6 +12,9 @@
 
     let mountDate = Date.now();
 
+    const apiBase = import.meta.env.VITE_API_BASE_URL || "";
+    const apiToken = import.meta.env.VITE_API_TOKEN || "";
+
     let disabled = false;
 
     /** @type {HTMLInputElement} */
@@ -23,9 +25,6 @@
 
     /** @type {HTMLDivElement} */
     let dropZone;
-
-    /** @type {HTMLDialogElement} */
-    let tosDialog;
 
     /** @type {HTMLDialogElement} */
     let errorDialog;
@@ -56,106 +55,294 @@
         });
     };
 
-    /** @type {Array<Number>} */
-    let totalProgress = [];
     let filesCount = 0;
-    let completed = 0;
+
+    const maxRetries = 2;
+
+    /** @type {Array<{ id: number, name: string, size: number, loaded: number, total: number, progress: number, startTime: number, eta: number | null, speed: number | null, status: "uploading" | "retrying" | "done" | "error", attempt: number }>} */
+    let uploadItems = [];
+
+    const refreshUploads = () => {
+        uploadItems = [...uploadItems];
+    };
+
+    const formatDuration = (/** @type {number} */ seconds) => {
+        if (!Number.isFinite(seconds)) return "—";
+        const total = Math.max(0, Math.round(seconds));
+        const mins = Math.floor(total / 60);
+        const secs = total % 60;
+        return `${mins}:${secs.toString().padStart(2, "0")}`;
+    };
+
+    const formatBytes = (/** @type {number} */ bytes) => {
+        if (!Number.isFinite(bytes)) return "0 B";
+        const units = ["B", "KB", "MB", "GB"];
+        let size = Math.max(0, bytes);
+        let unitIndex = 0;
+        while (size >= 1024 && unitIndex < units.length - 1) {
+            size /= 1024;
+            unitIndex += 1;
+        }
+        return `${size.toFixed(size >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+    };
+
+    const formatSpeed = (/** @type {number | null} */ speed) => {
+        if (speed === null || !Number.isFinite(speed)) return "—";
+        return `${speed.toFixed(speed >= 10 ? 0 : 1)} MB/s`;
+    };
+
+    const updateOverallProgress = () => {
+        const activeItems = uploadItems.filter(
+            (item) => item.status !== "done" && item.status !== "error",
+        );
+        if (!activeItems.length) {
+            uploadProgress = null;
+            return;
+        }
+        const avg =
+            activeItems.reduce((sum, item) => sum + item.progress, 0) /
+            activeItems.length;
+        uploadProgress = Math.round(avg);
+    };
+
+    const getFileUrl = (/** @type {import("$lib/types.js").File} */ file) => {
+        const base = `${file.origin || window.location.origin}/${file.id}${$userSettings.appendFileExt ? file.ext : ""}`;
+        return $userSettings.fileContentDisposition ? base : `${base}?skip-cd=true`;
+    };
+
+    const copyLatest = () => {
+        const latest = $uploadedFiles[0];
+        if (!latest) return;
+        navigator.clipboard.writeText(getFileUrl(latest));
+    };
+
+    const openLatest = () => {
+        const latest = $uploadedFiles[0];
+        if (!latest) return;
+        window.open(getFileUrl(latest), "_blank");
+    };
+
+    const openFilePicker = () => {
+        if (!fileInput) return;
+        fileInput.click();
+    };
+
+    const isTypingTarget = (/** @type {EventTarget | null} */ target) => {
+        if (!(target instanceof HTMLElement)) return false;
+        if (target.isContentEditable) return true;
+        return ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
+    };
+
+    const handleShortcuts = (/** @type {KeyboardEvent} */ e) => {
+        if (e.defaultPrevented || isTypingTarget(e.target)) return;
+        const isCommand = e.ctrlKey || e.metaKey;
+        if (!isCommand || !e.shiftKey) return;
+        const key = e.key.toLowerCase();
+        if (key === "u") {
+            e.preventDefault();
+            openFilePicker();
+            return;
+        }
+        if (key === "c") {
+            e.preventDefault();
+            copyLatest();
+            return;
+        }
+        if (key === "o") {
+            e.preventDefault();
+            openLatest();
+        }
+    };
+
+    const createUploadItem = (/** @type {File} */ file) => {
+        /** @type {typeof uploadItems[number]} */
+        const item = {
+            id: filesCount++,
+            name: file.name,
+            size: file.size,
+            loaded: 0,
+            total: file.size,
+            progress: 0,
+            startTime: Date.now(),
+            eta: null,
+            speed: null,
+            status: "uploading",
+            attempt: 0,
+        };
+        return item;
+    };
+
+    const scheduleCleanupDoneUpload = (/** @type {number} */ id) => {
+        setTimeout(() => {
+            const current = uploadItems.find((x) => x.id === id);
+            if (!current || current.status !== "done") return;
+            uploadItems = uploadItems.filter((x) => x.id !== id);
+            updateOverallProgress();
+        }, 1500);
+    };
+
+    const startUpload = async (
+        /** @type {File} */ file,
+        /** @type {typeof uploadItems[number]} */ item,
+        /** @type {number} */ attempt,
+    ) => {
+        item.attempt = attempt;
+        item.status = attempt > 0 ? "retrying" : "uploading";
+        item.startTime = Date.now();
+        item.loaded = 0;
+        item.total = file.size;
+        item.progress = 0;
+        item.eta = null;
+        item.speed = null;
+        refreshUploads();
+        updateOverallProgress();
+
+        const formData = new FormData();
+
+        if ($userSettings.stripExif && file.type.startsWith("image/")) {
+            try {
+                formData.append("file", await removeExif(file));
+            } catch (err) {
+                item.status = "error";
+                refreshUploads();
+                updateOverallProgress();
+                notifyError(`Error reading "${file.name}":\n${err}`);
+                return;
+            }
+        } else {
+            formData.append("file", file);
+        }
+
+        const xhr = new XMLHttpRequest();
+
+        const retryUpload = (/** @type {string} */ message, canRetry = true) => {
+            if (canRetry && attempt < maxRetries) {
+                item.status = "retrying";
+                item.progress = 0;
+                item.loaded = 0;
+                item.eta = null;
+                item.speed = null;
+                refreshUploads();
+                updateOverallProgress();
+                setTimeout(() => {
+                    startUpload(file, item, attempt + 1);
+                }, 700);
+                return;
+            }
+            item.status = "error";
+            refreshUploads();
+            updateOverallProgress();
+            notifyError(message);
+        };
+
+        xhr.addEventListener("load", () => {
+            try {
+                if (xhr.status === 413) {
+                    return retryUpload(
+                        `Failed uploading "${file.name}": File too large`,
+                        false,
+                    );
+                }
+                if (xhr.status !== 200) {
+                    try {
+                        const res = JSON.parse(xhr.response);
+                        return retryUpload(
+                            `Error uploading "${file.name}": (${xhr.status})\n${JSON.stringify(res, null, 4)}`,
+                        );
+                    } catch (_) {
+                        return retryUpload(
+                            `Error uploading "${file.name}": (${xhr.status})`,
+                        );
+                    }
+                }
+
+                const res = JSON.parse(xhr.response);
+
+                item.progress = 100;
+                item.loaded = item.total;
+                item.eta = 0;
+                item.speed = null;
+                item.status = "done";
+                refreshUploads();
+                updateOverallProgress();
+
+                loadFiles();
+                uploadedFiles.update((arr) => {
+                    return [
+                        {
+                            id: res.id,
+                            name: file.name,
+                            ext: res.ext,
+                            type: file.type || res.type,
+                            key: res.key,
+                            date: Date.now(),
+                            checksum: res.checksum,
+                            origin: res.origin,
+                        },
+                        ...arr,
+                    ];
+                });
+                saveFiles();
+                scheduleCleanupDoneUpload(item.id);
+            } catch (err) {
+                retryUpload(
+                    `Unexpected error uploading "${file.name}": (${xhr.status})\n${err}`,
+                );
+            }
+        });
+
+        xhr.addEventListener("error", (e) => {
+            const hint =
+                dev && e.loaded === 0
+                    ? `\n\nHint: API backend tidak berjalan/terjangkau di ${apiBase || window.location.origin}. Jalankan backend API-nya, atau set VITE_API_BASE_URL ke base URL backend.`
+                    : "";
+            retryUpload(
+                `Failed uploading "${file.name}": ${e.loaded} bytes transferred${hint}`,
+            );
+        });
+
+        const uploadUrl = new URL("/api/upload", apiBase || window.location.origin);
+        if (!$userSettings.fileContentDisposition) {
+            uploadUrl.searchParams.set("skip-cd", "true");
+        }
+        if (apiToken) {
+            uploadUrl.searchParams.set("token", apiToken);
+        }
+        xhr.open("POST", uploadUrl.toString(), true);
+
+        xhr.upload?.addEventListener("progress", (e) => {
+            if (!e.lengthComputable) return;
+
+            const elapsed = Date.now() - item.startTime;
+            const speed = elapsed > 0 ? e.loaded / elapsed : 0;
+            const remaining = Math.max(0, e.total - e.loaded);
+            const eta = speed > 0 ? remaining / speed / 1000 : null;
+            const speedMB = speed > 0 ? (speed * 1000) / 1024 / 1024 : null;
+
+            item.loaded = e.loaded;
+            item.total = e.total;
+            item.progress = Math.min(
+                100,
+                Math.round((e.loaded / e.total) * 100),
+            );
+            item.eta = eta;
+            item.speed = speedMB;
+            refreshUploads();
+            updateOverallProgress();
+        });
+
+        xhr.send(formData);
+    };
 
     async function upload(/** @type {FileList} */ files) {
         disabled = true;
 
-        const percentComplete = () => {
-            return totalProgress.length
-                ? totalProgress.reduce((a, b) => a + b, 0) /
-                      totalProgress.length
-                : 0;
-        };
-
         for (const file of files) {
-            const progressId = filesCount++;
-            const formData = new FormData();
-
-            if ($userSettings.stripExif && file.type.startsWith("image/")) {
-                try {
-                    formData.append("file", await removeExif(file));
-                } catch (err) {
-                    return notifyError(`Error reading "${file.name}":\n${err}`);
-                }
-            } else {
-                formData.append("file", file);
-            }
-
-            const xhr = new XMLHttpRequest();
-
-            xhr.addEventListener("load", () => {
-                try {
-                    if (++completed >= filesCount) uploadProgress = null;
-
-                    if (xhr.status === 413) {
-                        return notifyError(
-                            `Failed uploading "${file.name}": File too large`,
-                        );
-                    } else if (xhr.status !== 200) {
-                        try {
-                            const res = JSON.parse(xhr.response);
-                            return notifyError(
-                                `Error uploading "${file.name}": (${xhr.status})\n${JSON.stringify(res, null, 4)}`,
-                            );
-                        } catch (_) {
-                            return notifyError(
-                                `Error uploading "${file.name}": (${xhr.status})`,
-                            );
-                        }
-                    }
-
-                    const res = JSON.parse(xhr.response);
-
-                    loadFiles();
-                    uploadedFiles.update((arr) => {
-                        return [
-                            {
-                                id: res.id,
-                                name: file.name,
-                                ext: res.ext,
-                                type: file.type || res.type,
-                                key: res.key,
-                                date: Date.now(),
-                                checksum: res.checksum,
-                                origin: res.origin,
-                            },
-                            ...arr,
-                        ];
-                    });
-                    saveFiles();
-                } catch (err) {
-                    notifyError(
-                        `Unexpected error uploading "${file.name}": (${xhr.status})\n${err}`,
-                    );
-                }
-            });
-
-            xhr.addEventListener("error", (e) => {
-                notifyError(
-                    `Failed uploading "${file.name}": ${e.loaded} bytes transferred`,
-                );
-                totalProgress[progressId] = 100;
-                if (++completed >= files.length) uploadProgress = null;
-            });
-
-            xhr.open(
-                "POST",
-                `${dev ? "http://localhost:8787" : ""}/api/upload${!$userSettings.fileContentDisposition ? "?skip-cd=true" : ""}`,
-                true,
-            );
-
-            xhr.upload?.addEventListener("progress", (e) => {
-                if (!e.lengthComputable) return;
-
-                totalProgress[progressId] = ~~(e.loaded / e.total) * 100;
-                uploadProgress = ~~percentComplete();
-            });
-
-            xhr.send(formData);
+            const item = createUploadItem(file);
+            uploadItems = [item, ...uploadItems];
+            refreshUploads();
+            updateOverallProgress();
+            startUpload(file, item, 0);
         }
         disabled = false;
     }
@@ -205,6 +392,7 @@
     on:dragover={dragFiles}
     on:dragenter={dragFiles}
     on:drop={dropFiles}
+    on:keydown={handleShortcuts}
 />
 
 <svelte:body on:paste={pasteFiles} />
@@ -217,22 +405,7 @@
     </section>
 </Dialog>
 
-<Dialog bind:node={tosDialog}>
-    <section class="terms">
-        <Terms></Terms>
-    </section>
-</Dialog>
-
 <section>
-    <p>
-        <a
-            href="/terms"
-            on:click={(e) => {
-                e.preventDefault();
-                tosDialog.showModal();
-            }}>Terms and Privacy Policy</a
-        >
-    </p>
     <!--
     <p class="maintenance">
         ⚠️ Maintenance is in progress<br>
@@ -268,6 +441,41 @@
 
     {#if uploadProgress !== null}
         <p>Uploading... ({uploadProgress}%)</p>
+    {/if}
+    {#if uploadItems.length}
+        <div class="upload-progress">
+            {#each uploadItems as item (item.id)}
+                <div class="upload-item">
+                    <div class="upload-item-header">
+                        <span class="upload-name" title={item.name}
+                            >{item.name}</span
+                        >
+                        <span class="upload-meta">
+                            {formatBytes(item.loaded)} / {formatBytes(item.total)}
+                            · {item.progress}%
+                            {#if item.speed !== null && item.status !== "done" && item.status !== "error"}
+                                · {formatSpeed(item.speed)}
+                            {/if}
+                            {#if item.eta !== null && item.status !== "done" && item.status !== "error"}
+                                · ETA {formatDuration(item.eta)}
+                            {/if}
+                        </span>
+                    </div>
+                    <progress max="100" value={item.progress}></progress>
+                    <div class="upload-status">
+                        {#if item.status === "retrying"}
+                            retry {item.attempt}/{maxRetries}
+                        {:else if item.status === "error"}
+                            failed
+                        {:else if item.status === "done"}
+                            done
+                        {:else}
+                            uploading
+                        {/if}
+                    </div>
+                </div>
+            {/each}
+        </div>
     {/if}
 </section>
 
@@ -337,7 +545,50 @@
         max-width: 350px;
     }
 
-    .terms {
+    .upload-progress {
+        margin-top: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-width: 520px;
+    }
+
+    .upload-item {
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid rgb(var(--outl2));
+        background: rgb(var(--bg_h));
+    }
+
+    .upload-item-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
         font-size: 0.9rem;
+    }
+
+    .upload-name {
+        max-width: 240px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .upload-meta {
+        opacity: 0.75;
+        white-space: nowrap;
+    }
+
+    progress {
+        width: 100%;
+        height: 8px;
+        margin: 6px 0 2px;
+    }
+
+    .upload-status {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        opacity: 0.7;
     }
 </style>

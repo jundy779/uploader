@@ -12,7 +12,7 @@
  * @property {String?} origin
  */
 
-/** @typedef {"catppuccin" | "dark" | "light" | "amoled"} Theme */
+/** @typedef {"auto" | "catppuccin" | "dark" | "light" | "amoled" | "neobrutalism" | "neobrutalism-dark" | "glassmorphism" | "neumorphism" | "claymorphism" | "minimalist" | "frost"} Theme */
 
 /**
  * @typedef {Object} UserSettings

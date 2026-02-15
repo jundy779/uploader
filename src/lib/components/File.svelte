@@ -3,8 +3,10 @@
     import { onDestroy, onMount, tick } from "svelte";
     import Dialog from "./Dialog.svelte";
     import { uploadedFiles, saveFiles, loadFiles } from "./files";
-    import { dev } from "$app/environment";
     import Icon from "./Icon.svelte";
+
+    const apiBase = import.meta.env.VITE_API_BASE_URL || "";
+    const apiToken = import.meta.env.VITE_API_TOKEN || "";
 
     /** @type {Boolean} */
     export let isNewUpload;
@@ -21,6 +23,8 @@
     /** @type {(msg: string) => void} */
     export let notifyError;
 
+    let fileUrl = "";
+
     const copy = () => {
         const val = urlInput.value;
         urlInput.select();
@@ -36,11 +40,15 @@
         if (deleteDialog.returnValue === "confirm") {
             deleteDialog.returnValue = "";
             try {
-                const res = await fetch(
-                    `${dev ? "http://localhost:8787" : ""}/api/delete?key=${encodeURIComponent(file.key)}`,
-
-                    { method: "POST" },
+                const deleteUrl = new URL(
+                    "/api/delete",
+                    apiBase || window.location.origin,
                 );
+                deleteUrl.searchParams.set("key", file.key);
+                if (apiToken) {
+                    deleteUrl.searchParams.set("token", apiToken);
+                }
+                const res = await fetch(deleteUrl.toString(), { method: "POST" });
 
                 if (res.status == 503) {
                     notifyError(`Failed deleting "${file.name}": maintenance`);
@@ -64,7 +72,10 @@
         }
     };
 
-    $: fileUrl = `${file.origin || window.location.origin}/${file.id}${$userSettings.appendFileExt ? file.ext : ""}`;
+    $: {
+        const base = `${file.origin || window.location.origin}/${file.id}${$userSettings.appendFileExt ? file.ext : ""}`;
+        fileUrl = $userSettings.fileContentDisposition ? base : `${base}?skip-cd=true`;
+    }
 
     onMount(async () => {
         if (isNewUpload) {
@@ -112,6 +123,7 @@
                         alt="File Thumbnail"
                         src="/t/{file.id}"
                         loading="lazy"
+                        decoding="async"
                         on:error={function () {
                             this.style = "display: none;";
                         }}

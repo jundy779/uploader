@@ -1,0 +1,157 @@
+:root {
+    --bg: 255 248 221;
+    --bg_h: 255 227 172;
+    --bg0: 255 214 140;
+    --bg2: 255 200 108;
+    --accent-blue: 109 164 255;
+    --accent-blue-dark: 76 132 230;
+    --accent-blue-soft: 202 222 255;
+    --button-blue: 173 205 255;
+    --button-blue-hover: 140 182 255;
+    --fg: 0 0 0;
+    --fg2: 0 0 0;
+    --primary: 0 0 0;
+    --outl1: 0 0 0;
+    --outl2: 0 0 0;
+    --blue: 0 110 255;
+    --sky: 255 0 120;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    background-color: rgb(var(--bg));
+    color: rgb(var(--fg));
+    font-family: "Arial Black", system-ui, -apple-system, sans-serif;
+    letter-spacing: 0.2px;
+}
+
+a {
+    font-weight: 700;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 2px;
+}
+
+button,
+input,
+textarea,
+select {
+    font: inherit;
+}
+
+button,
+input[type="text"],
+.upload-label,
+.file,
+.settings,
+.wrapper,
+dialog,
+table,
+.drop-zone {
+    border: 3px solid rgb(var(--primary));
+    box-shadow: 4px 4px 0 rgb(var(--primary));
+    border-radius: 0;
+}
+
+button,
+.upload-label {
+    text-transform: uppercase;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    background: rgb(var(--button-blue));
+    background-image: none;
+}
+
+button:hover,
+.upload-label:hover,
+a:hover {
+    filter: contrast(1.15) saturate(1.1);
+}
+
+body button:hover,
+body .upload-label:hover,
+body .support-btn:hover {
+    background-color: rgb(var(--button-blue-hover));
+}
+
+input[type="text"],
+input[type="checkbox"] {
+    background-color: rgb(var(--bg_h));
+    color: rgb(var(--fg));
+}
+
+input[type="text"]:focus {
+    outline: 3px solid rgb(var(--primary));
+}
+
+hr {
+    height: 3px;
+    background: rgb(var(--primary));
+    border: 0;
+    box-shadow: none;
+}
+
+table {
+    background-color: rgb(var(--bg0));
+    border-collapse: separate;
+    border-spacing: 6px;
+}
+
+td,
+th {
+    background-color: rgb(var(--bg2));
+    padding: 5px 8px;
+    border: 0;
+    box-shadow: none;
+}
+
+dialog {
+    background-color: rgb(var(--bg_h));
+}
+
+.upload-label {
+    box-shadow: 6px 6px 0 rgb(var(--primary));
+}
+
+.file .details {
+    box-shadow: none;
+    border: 2px solid rgb(var(--primary));
+}
+
+.link {
+    background-color: rgb(var(--bg));
+}
+
+.thumbnail {
+    border: 3px solid rgb(var(--primary));
+    box-shadow: 4px 4px 0 rgb(var(--primary));
+}
+
+.settings summary,
+.settings .container,
+.settings .option {
+    border: 0;
+    box-shadow: none;
+    background-color: transparent;
+}
+
+.settings summary {
+    text-transform: uppercase;
+    font-weight: 800;
+}
+
+.support-btn {
+    border: 3px solid rgb(var(--primary));
+    box-shadow: 4px 4px 0 rgb(var(--primary));
+    background: rgb(var(--button-blue));
+    background-image: none;
+}
+
+.name {
+    text-transform: uppercase;
+    text-shadow: 2px 2px 0 rgb(var(--primary));
+}

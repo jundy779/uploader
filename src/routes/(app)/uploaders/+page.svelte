@@ -95,6 +95,20 @@
 </div>
 
 <div>
+    <details open>
+        <summary>CLI</summary>
+        <div class="r">
+            <div>Bash</div>
+            <pre>curl "{endpoints.upload}" -F "file=@/path/to/file.png"</pre>
+        </div>
+        <div class="r">
+            <div>PowerShell</div>
+            <pre>curl "{endpoints.upload}" -F "file=@C:\path\to\file.png"</pre>
+        </div>
+    </details>
+</div>
+
+<div>
     <details>
         <summary>API</summary>
         <div>

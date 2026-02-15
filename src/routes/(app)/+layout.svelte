@@ -12,14 +12,41 @@
 
     /** @typedef {import("$lib/types.js").Theme} Theme */
 
-    /** @type {Theme[]} */
-    const themes = ["light", "dark", "amoled", "catppuccin"];
+    /** @type {Array<{ id: Theme, label: string }>} */
+    const themes = [
+        { id: "auto", label: "auto (system)" },
+        { id: "glassmorphism", label: "glassmorphism" },
+        { id: "neumorphism", label: "neumorphism" },
+        { id: "claymorphism", label: "claymorphism" },
+        { id: "neobrutalism", label: "neobrutalism" },
+        { id: "neobrutalism-dark", label: "neobrutalism-dark" },
+        { id: "minimalist", label: "minimalist" },
+        { id: "frost", label: "frost" },
+        { id: "light", label: "light" },
+        { id: "dark", label: "dark" },
+        { id: "amoled", label: "amoled" },
+        { id: "catppuccin", label: "catppuccin" },
+    ];
 
     /** @type {HTMLDialogElement} */
     let donateDialog;
 
+    let systemTheme = "dark";
+    let activeTheme = "dark";
+
     onMount(() => {
         loadSettings();
+        if (typeof window === "undefined") return;
+
+        const media = window.matchMedia("(prefers-color-scheme: dark)");
+        const updateSystemTheme = () => {
+            systemTheme = media.matches ? "dark" : "light";
+        };
+        updateSystemTheme();
+        media.addEventListener("change", updateSystemTheme);
+        return () => {
+            media.removeEventListener("change", updateSystemTheme);
+        };
     });
 
     const changeTheme = (
@@ -31,6 +58,11 @@
         $userSettings.theme = theme;
         saveSettings();
     };
+
+    $: activeTheme =
+        $userSettings.theme === "auto"
+            ? systemTheme
+            : $userSettings.theme || "dark";
 </script>
 
 <svelte:head>
@@ -42,7 +74,7 @@
     >
     <link
         rel="stylesheet"
-        href="/static/styles/{$userSettings.theme || 'dark'}.css"
+        href="/static/styles/{activeTheme}.css"
     />
 </svelte:head>
 
@@ -114,7 +146,8 @@
                         <a
                             href="/"
                             class="theme-name"
-                            on:click={(e) => changeTheme(e, theme)}>{theme}</a
+                            on:click={(e) => changeTheme(e, theme.id)}
+                            >{theme.label}</a
                         >
                     {/each}
                 </div>
@@ -233,6 +266,7 @@
         display: flex;
         background-color: rgb(var(--bg_h));
         width: fit-content;
+        max-width: 100%;
         border-radius: 0.45rem;
         gap: 2px;
         flex-direction: column;
@@ -262,12 +296,15 @@
     .option {
         display: flex;
         align-items: center;
-        max-width: max-content;
+        max-width: 100%;
+        flex-wrap: wrap;
     }
 
     .themes {
         gap: 1ch;
         margin: 5px 0;
+        flex-wrap: wrap;
+        row-gap: 0.4rem;
     }
 
     nav {

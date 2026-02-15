@@ -7,7 +7,7 @@ const defaultSettings = {
     "fileContentDisposition": true,
     "stripExif": false,
     "showThumbnails": true,
-    "theme": "dark"
+    "theme": "neobrutalism"
 }
 
 /**

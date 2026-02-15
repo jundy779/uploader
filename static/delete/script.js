@@ -1,10 +1,14 @@
 document.title = window.location.hostname;
 
-const key = window.location.search.substring(1);
+const params = new URLSearchParams(window.location.search);
+const rawQuery = window.location.search.substring(1);
+const key = params.get("key") || (rawQuery && !rawQuery.includes("=") ? rawQuery : "");
+const token = params.get("token") || "";
 
 const loadObject = async () => {
     try {
-        const res = await fetch(`/api/object?key=${key}`);
+        const tokenParam = token ? `&token=${encodeURIComponent(token)}` : "";
+        const res = await fetch(`/api/object?key=${encodeURIComponent(key)}${tokenParam}`);
         const file = await res.json();
         if (file.error) return msg.innerHTML = `Error ${file.error}: ${file.message}`;
 
@@ -30,7 +34,8 @@ const deleteObject = async () => {
         content.style.display = "none";
         msg.innerText = 'Deleting...';
 
-        const res = await fetch(`/api/delete?key=${key}`);
+        const tokenParam = token ? `&token=${encodeURIComponent(token)}` : "";
+        const res = await fetch(`/api/delete?key=${encodeURIComponent(key)}${tokenParam}`, { method: "POST" });
         const json = await res.json();
         if (json.error) return msg.innerHTML = `Delete Error ${json.error}: ${json.message}`;
 

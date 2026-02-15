@@ -17,9 +17,9 @@ type Index = {
     filesById: Record<string, StoredFile>;
 };
 
+const isVercel = Boolean(process.env.VERCEL || process.env.VERCEL_ENV);
 const dataDir = path.resolve(
-    process.env.UPLOADER_DATA_DIR ||
-        (process.env.VERCEL ? "/tmp/uploader" : ".data/uploader"),
+    process.env.UPLOADER_DATA_DIR || (isVercel ? "/tmp/uploader" : ".data/uploader"),
 );
 const indexPath = path.join(dataDir, "index.json");
 

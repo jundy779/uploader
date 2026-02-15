@@ -326,4 +326,27 @@ echo $response;`}</pre>
     .api-label {
         font-weight: 600;
     }
+
+    @media (max-width: 720px) {
+        summary {
+            font-size: 1.5em;
+        }
+
+        .api-block {
+            padding: 8px;
+        }
+
+        .api-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .api-pair {
+            grid-template-columns: 1fr;
+        }
+
+        .codeblock {
+            font-size: 0.85rem;
+            padding: 6px;
+        }
+    }
 </style>

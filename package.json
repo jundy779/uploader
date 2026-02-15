@@ -21,6 +21,9 @@
         "vite": "5.0.3"
     },
     "type": "module",
+    "engines": {
+        "node": "20.x"
+    },
     "dependencies": {
         "svelte-preprocess": "5.1.4"
     }

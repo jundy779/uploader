@@ -29,6 +29,8 @@
 
     /** @type {HTMLDialogElement} */
     let qrDialog;
+    /** @type {number | null} */
+    let cleanupTimer = null;
 
     const copy = () => {
         const val = urlInput.value;
@@ -81,6 +83,31 @@
         }
     };
 
+    const removeFromHistory = () => {
+        loadFiles();
+        uploadedFiles.update((arr) => {
+            return arr.filter((x) => x.id !== file.id);
+        });
+        saveFiles();
+    };
+
+    const checkExists = async () => {
+        try {
+            const checkUrl = new URL(
+                "/api/object",
+                apiBase || window.location.origin,
+            );
+            checkUrl.searchParams.set("id", file.id);
+            if (apiToken) {
+                checkUrl.searchParams.set("token", apiToken);
+            }
+            const res = await fetch(checkUrl.toString());
+            if (res.status === 404) {
+                removeFromHistory();
+            }
+        } catch (_) {}
+    };
+
     $: {
         const base = new URL(
             `/${file.id}${$userSettings.appendFileExt ? file.ext : ""}`,
@@ -106,10 +133,14 @@
             urlInput.focus();
         }
         deleteDialog.addEventListener("close", dialogOnClose);
+        cleanupTimer = window.setTimeout(checkExists, 600);
     });
 
     onDestroy(() => {
         deleteDialog.removeEventListener("close", dialogOnClose);
+        if (cleanupTimer) {
+            clearTimeout(cleanupTimer);
+        }
     });
 </script>
 

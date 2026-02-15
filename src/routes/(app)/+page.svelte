@@ -653,8 +653,8 @@
 
     .preupload-item {
         border: 2px solid rgb(var(--outl1));
-        border-radius: 0;
-        box-shadow: 3px 3px 0 rgb(var(--primary));
+        border-radius: 6px;
+        box-shadow: 2px 2px 0 rgb(var(--primary));
         padding: 10px;
         display: flex;
         flex-direction: column;
@@ -699,7 +699,8 @@
 
     @media screen and (max-width: 640px) {
         .preupload {
-            min-width: min(520px, 92vw);
+            min-width: 92vw;
+            gap: 10px;
         }
 
         .preupload-row {
@@ -710,9 +711,24 @@
             font-weight: 600;
         }
 
+        .preupload-item {
+            padding: 8px;
+            box-shadow: none;
+        }
+
+        .preupload-input {
+            font-size: 0.9rem;
+            padding: 6px 8px;
+        }
+
         .preupload-actions {
             flex-direction: column;
             align-items: stretch;
+        }
+
+        .preupload-actions .upload-label {
+            width: 100%;
+            min-width: 0;
         }
     }
 

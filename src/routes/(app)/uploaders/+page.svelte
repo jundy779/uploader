@@ -111,70 +111,130 @@
 <div>
     <details>
         <summary>API</summary>
-        <div>
-            <table>
-                <tr>
-                    <th>Upload:</th>
-                    <td class="code">
-                        curl "{endpoints.upload}" -F
-                        "file=@/home/supa/kappa.png"
-                    </td>
-                </tr>
-            </table>
-            <div class="r">
-                <pre>content-type: application/json</pre>
-                <pre>{JSON.stringify(
-                        {
-                            id: "${id}",
-                            ext: ".png",
-                            type: "image/png",
-                            checksum: "${md5}",
-                            key: "${key}",
-                            link: `${$page.url.origin}/\${id}`,
-                            delete: `${$page.url.origin}/delete?\${key}`,
-                        },
-                        null,
-                        4,
-                    )}</pre>
+        <div class="api-block">
+            <div class="api-title">Upload</div>
+            <pre class="codeblock">curl "{endpoints.upload}" -F "file=@/home/supa/kappa.png"</pre>
+            <div class="api-subtitle">Response</div>
+            <pre class="codeblock">content-type: application/json</pre>
+            <pre class="codeblock">{JSON.stringify(
+                    {
+                        id: "${id}",
+                        ext: ".png",
+                        type: "image/png",
+                        checksum: "${md5}",
+                        key: "${key}",
+                        origin: $page.url.origin,
+                        private: false,
+                        link: `${$page.url.origin}/\${id}`,
+                        delete: `${$page.url.origin}/delete?\${key}`,
+                    },
+                    null,
+                    4,
+                )}</pre>
+        </div>
+        <div class="api-block">
+            <div class="api-title">SDK examples</div>
+            <div class="api-grid">
+                <div class="api-card">
+                    <div class="api-subtitle">Node.js (fetch)</div>
+                    <pre class="codeblock">{`import fs from "node:fs";
+import FormData from "form-data";
+
+const filePath = "/path/to/file.png";
+const form = new FormData();
+form.append("file", fs.createReadStream(filePath));
+
+const res = await fetch("${endpoints.upload}", {
+  method: "POST",
+  headers: { Authorization: "Bearer {token}" },
+  body: form
+});
+console.log(await res.json());`}</pre>
+                </div>
+                <div class="api-card">
+                    <div class="api-subtitle">Python (requests)</div>
+                    <pre class="codeblock">{`import requests
+
+file_path = "/path/to/file.png"
+with open(file_path, "rb") as f:
+    res = requests.post(
+        "${endpoints.upload}",
+        headers={"Authorization": "Bearer {token}"},
+        files={"file": f},
+    )
+print(res.json())`}</pre>
+                </div>
+                <div class="api-card">
+                    <div class="api-subtitle">PHP (cURL)</div>
+                    <pre class="codeblock">{`<?php
+$file = new CURLFile("/path/to/file.png");
+$ch = curl_init("${endpoints.upload}");
+curl_setopt_array($ch, [
+  CURLOPT_POST => true,
+  CURLOPT_HTTPHEADER => ["Authorization: Bearer {token}"],
+  CURLOPT_POSTFIELDS => ["file" => $file],
+  CURLOPT_RETURNTRANSFER => true,
+]);
+$response = curl_exec($ch);
+curl_close($ch);
+echo $response;`}</pre>
+                </div>
             </div>
         </div>
-        <div>
-            <table>
-                <tr>
-                    <th>Delete:</th>
-                    <td class="code">
-                        curl "{endpoints.delete}?key=$fileKey"
-                    </td>
-                </tr>
-            </table>
-            <div class="r">
-                <pre>content-type: application/json</pre>
-                <pre>{JSON.stringify({ success: true }, null, 4)}</pre>
-            </div>
+        <div class="api-block">
+            <div class="api-title">Auth</div>
+            <pre class="codeblock">Authorization: Bearer {"{token}"}</pre>
+            <pre class="codeblock">X-API-Key: {"{token}"}</pre>
+            <pre class="codeblock">{endpoints.upload}?token={"{token}"}</pre>
         </div>
-        <div>
-            <table>
-                <tr>
-                    <th>Object:</th>
-                    <td class="code">
-                        curl "{endpoints.object}?id=$fileId"
-                    </td>
-                </tr>
-            </table>
-            <div class="r">
-                <pre>content-type: application/json</pre>
-                <pre>{JSON.stringify(
-                        {
-                            id: "${id}",
-                            type: "${mimetype}",
-                            date: "${Number(unixUploadTimeMS)}",
-                            size: "${Number(bytes)}",
-                            checksums: { md5: "${md5}" },
-                            name: "${filename} (nullable)",
-                        },
-                        null,
-                        4,
-                    )}</pre>
+        <div class="api-block">
+            <div class="api-title">Private upload</div>
+            <pre class="codeblock">curl "{endpoints.upload}" -F "file=@/path/to/file.png" -F "visibility=private" -F "password=secret"</pre>
+            <div class="api-subtitle">Access</div>
+            <pre class="codeblock">{$page.url.origin}/{"{id}"}?pw=secret</pre>
+            <pre class="codeblock">X-File-Password: secret</pre>
+        </div>
+        <div class="api-block">
+            <div class="api-title">Delete</div>
+            <pre class="codeblock">curl "{endpoints.delete}?key=$fileKey"</pre>
+            <div class="api-subtitle">Response</div>
+            <pre class="codeblock">content-type: application/json</pre>
+            <pre class="codeblock">{JSON.stringify({ success: true }, null, 4)}</pre>
+        </div>
+        <div class="api-block">
+            <div class="api-title">Object</div>
+            <pre class="codeblock">curl "{endpoints.object}?id=$fileId"</pre>
+            <div class="api-subtitle">Response</div>
+            <pre class="codeblock">content-type: application/json</pre>
+            <pre class="codeblock">{JSON.stringify(
+                    {
+                        id: "${id}",
+                        type: "${mimetype}",
+                        date: "${Number(unixUploadTimeMS)}",
+                        size: "${Number(bytes)}",
+                        checksums: { md5: "${md5}" },
+                        name: "${filename} (nullable)",
+                    },
+                    null,
+                    4,
+                )}</pre>
+        </div>
+        <div class="api-block">
+            <div class="api-title">Download options</div>
+            <pre class="codeblock">{$page.url.origin}/{"{id}"}?skip-cd=true</pre>
+        </div>
+        <div class="api-block">
+            <div class="api-title">Limits & Errors</div>
+            <div class="api-pair">
+                <div class="api-label">Rate limits</div>
+                <div>Upload 20/min, Delete 60/min, Object 120/min</div>
+            </div>
+            <div class="api-pair">
+                <div class="api-label">Errors</div>
+                <div>
+                    400 bad request, 401 unauthorized, 403 forbidden, 404 not found,
+                    413 file too large, 429 too many requests, 500 server error
+                </div>
             </div>
         </div>
     </details>
@@ -211,23 +271,59 @@
         margin: 5px;
     }
 
-    table {
-        border-spacing: 2px;
-        border-collapse: separate;
+    .api-block {
+        margin: 10px 0;
+        padding: 10px;
+        border: 1px solid rgb(var(--outl2));
+        border-radius: 8px;
+        background: rgb(var(--bg_h));
     }
 
-    td {
-        padding: 3px;
-        background-color: rgb(var(--bg2));
-        border-radius: 5px;
+    .api-title {
+        font-size: 1.1em;
+        font-weight: 600;
+        margin-bottom: 6px;
     }
 
-    th {
-        text-align: inherit;
+    .api-subtitle {
+        font-size: 0.95em;
+        font-weight: 600;
+        margin: 8px 0 4px;
     }
 
-    .code {
+    .api-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 8px;
+    }
+
+    .api-card {
+        padding: 8px;
+        border: 1px solid rgb(var(--outl1));
+        background: rgb(var(--bg0));
+        border-radius: 6px;
+    }
+
+    .codeblock {
         font-family: monospace;
         background-color: rgb(var(--bg0));
+        border: 1px solid rgb(var(--outl1));
+        border-radius: 6px;
+        padding: 6px 8px;
+        margin: 4px 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .api-pair {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 8px;
+        align-items: start;
+        margin-top: 6px;
+    }
+
+    .api-label {
+        font-weight: 600;
     }
 </style>

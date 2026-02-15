@@ -30,6 +30,8 @@
         outline: none;
         word-wrap: break-word;
         overscroll-behavior: contain;
+        max-width: min(720px, 92vw);
+        max-height: 90vh;
 
         &::backdrop {
             background-color: rgba(0, 0, 0, 0.2);
@@ -54,5 +56,21 @@
 
     section {
         margin: 0 5px;
+    }
+
+    @media screen and (max-width: 640px) {
+        dialog {
+            width: 92vw;
+            padding: 0.5rem;
+        }
+
+        .close-btn {
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+
+        section {
+            margin: 0 2px;
+        }
     }
 </style>

@@ -699,7 +699,8 @@
 
     @media screen and (max-width: 640px) {
         .preupload {
-            min-width: 92vw;
+            min-width: 0;
+            width: 100%;
             gap: 10px;
         }
 

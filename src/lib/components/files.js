@@ -24,6 +24,6 @@ export const loadFiles = () => {
 export const saveFiles = () => {
     loadSettings();
     if (get(userSettings).rememberFileHistory !== true) return
-
-    localStorage.setItem("uploaded-files", JSON.stringify(get(uploadedFiles)));
+    const sanitized = get(uploadedFiles).map(({ password, ...rest }) => rest);
+    localStorage.setItem("uploaded-files", JSON.stringify(sanitized));
 }

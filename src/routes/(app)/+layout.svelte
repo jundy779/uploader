@@ -257,6 +257,40 @@
         }
     }
 
+    @media screen and (max-width: 640px) {
+        .wrapper {
+            padding: 8px;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+        }
+
+        nav {
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        ul {
+            flex-wrap: wrap;
+            height: auto;
+            row-gap: 6px;
+        }
+
+        li:not(:last-child)::after {
+            margin: 0 0.35ch;
+        }
+
+        .nav-links {
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .settings {
+            width: 100%;
+        }
+    }
+
     .wrapper {
         width: 800px;
         padding: 10px;

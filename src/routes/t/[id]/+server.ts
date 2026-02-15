@@ -3,10 +3,14 @@ import { readFile } from "node:fs/promises";
 import { createReadStream } from "node:fs";
 import path from "node:path";
 import { Readable } from "node:stream";
+import crypto from "node:crypto";
 
 type StoredFile = {
     filePath: string;
     type: string;
+    private?: boolean;
+    passwordSalt?: string;
+    passwordHash?: string;
 };
 
 type Index = {
@@ -29,12 +33,25 @@ const loadIndex = async (): Promise<Index> => {
     }
 };
 
-export const GET: RequestHandler = async ({ params }) => {
+export const GET: RequestHandler = async ({ params, url, request }) => {
     const id = (params.id || "").split(".")[0];
     const index = await loadIndex();
     const meta = index.filesById[id];
     if (!meta || !meta.type?.startsWith("image/")) {
         return new Response("Not found", { status: 404 });
+    }
+    if (meta.private && meta.passwordHash && meta.passwordSalt) {
+        const provided =
+            url.searchParams.get("pw") ||
+            request.headers.get("x-file-password") ||
+            "";
+        const hashed = crypto
+            .createHash("sha256")
+            .update(`${meta.passwordSalt}${provided}`)
+            .digest("hex");
+        if (!provided || hashed !== meta.passwordHash) {
+            return new Response("Forbidden", { status: 403 });
+        }
     }
 
     const stream = Readable.toWeb(createReadStream(meta.filePath)) as any;

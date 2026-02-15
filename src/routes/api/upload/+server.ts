@@ -17,6 +17,9 @@ type StoredFile = {
     size: number;
     createdAt: number;
     filePath: string;
+    private?: boolean;
+    passwordSalt?: string;
+    passwordHash?: string;
 };
 
 type Index = {
@@ -113,6 +116,13 @@ const md5File = (filePath: string) => {
     });
 };
 
+const hashPassword = (salt: string, password: string) => {
+    return crypto
+        .createHash("sha256")
+        .update(`${salt}${password}`)
+        .digest("hex");
+};
+
 export const POST: RequestHandler = async ({ request, url }) => {
     if (!checkToken(request, url)) {
         return json(
@@ -133,6 +143,18 @@ export const POST: RequestHandler = async ({ request, url }) => {
     if (!(file instanceof File)) {
         return json(
             { error: 400, message: 'Missing multipart form field "file"' },
+            { status: 400 },
+        );
+    }
+    const visibility = form.get("visibility");
+    const rawPassword = form.get("password");
+    const isPrivate =
+        visibility === "private" || form.get("private") === "true";
+    const password =
+        typeof rawPassword === "string" ? rawPassword.trim() : "";
+    if (isPrivate && !password) {
+        return json(
+            { error: 400, message: "Password is required for private files" },
             { status: 400 },
         );
     }
@@ -165,6 +187,8 @@ export const POST: RequestHandler = async ({ request, url }) => {
     const checksum = await md5File(filePath);
     const key = crypto.randomBytes(24).toString("hex");
     const createdAt = Date.now();
+    const passwordSalt = isPrivate ? crypto.randomBytes(16).toString("hex") : "";
+    const passwordHash = isPrivate ? hashPassword(passwordSalt, password) : "";
 
     index.filesById[id] = {
         id,
@@ -176,6 +200,9 @@ export const POST: RequestHandler = async ({ request, url }) => {
         size: file.size,
         createdAt,
         filePath,
+        private: isPrivate,
+        passwordSalt: passwordSalt || undefined,
+        passwordHash: passwordHash || undefined,
     };
     index.idByKey[key] = id;
     await saveIndex(index);
@@ -187,5 +214,6 @@ export const POST: RequestHandler = async ({ request, url }) => {
         checksum,
         key,
         origin: url.origin,
+        private: isPrivate,
     });
 };

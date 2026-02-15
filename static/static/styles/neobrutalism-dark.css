@@ -156,5 +156,5 @@ dialog {
 
 .name {
     text-transform: uppercase;
-    text-shadow: 1px 1px 0 rgb(var(--primary));
+    text-shadow: none;
 }

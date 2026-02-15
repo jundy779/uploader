@@ -10,6 +10,8 @@
  * @property {Number} date
  * @property {String} checksum
  * @property {String?} origin
+ * @property {Boolean?} private
+ * @property {String?} password
  */
 
 /** @typedef {"auto" | "catppuccin" | "dark" | "light" | "amoled" | "neobrutalism" | "neobrutalism-dark" | "glassmorphism" | "neumorphism" | "claymorphism" | "minimalist" | "frost"} Theme */

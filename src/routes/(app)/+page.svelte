@@ -29,6 +29,9 @@
     /** @type {HTMLDialogElement} */
     let errorDialog;
 
+    /** @type {HTMLDialogElement} */
+    let preUploadDialog;
+
     /** @type {EventTarget} */
     let lastTarget;
 
@@ -56,11 +59,15 @@
     };
 
     let filesCount = 0;
+    let pendingCount = 0;
 
     const maxRetries = 2;
 
-    /** @type {Array<{ id: number, name: string, size: number, loaded: number, total: number, progress: number, startTime: number, eta: number | null, speed: number | null, status: "uploading" | "retrying" | "done" | "error", attempt: number }>} */
+    /** @type {Array<{ id: number, name: string, size: number, loaded: number, total: number, progress: number, startTime: number, eta: number | null, speed: number | null, status: "uploading" | "retrying" | "done" | "error", attempt: number, isPrivate: boolean, password: string }>} */
     let uploadItems = [];
+
+    /** @type {Array<{ id: number, file: File, name: string, isPrivate: boolean, password: string }>} */
+    let pendingUploads = [];
 
     const refreshUploads = () => {
         uploadItems = [...uploadItems];
@@ -105,21 +112,30 @@
         uploadProgress = Math.round(avg);
     };
 
-    const getFileUrl = (/** @type {import("$lib/types.js").File} */ file) => {
-        const base = `${file.origin || window.location.origin}/${file.id}${$userSettings.appendFileExt ? file.ext : ""}`;
-        return $userSettings.fileContentDisposition ? base : `${base}?skip-cd=true`;
+    const buildFileUrl = (/** @type {import("$lib/types.js").File} */ file) => {
+        const base = new URL(
+            `/${file.id}${$userSettings.appendFileExt ? file.ext : ""}`,
+            file.origin || window.location.origin,
+        );
+        if (!$userSettings.fileContentDisposition) {
+            base.searchParams.set("skip-cd", "true");
+        }
+        if (file.private && file.password) {
+            base.searchParams.set("pw", file.password);
+        }
+        return base.toString();
     };
 
     const copyLatest = () => {
         const latest = $uploadedFiles[0];
         if (!latest) return;
-        navigator.clipboard.writeText(getFileUrl(latest));
+        navigator.clipboard.writeText(buildFileUrl(latest));
     };
 
     const openLatest = () => {
         const latest = $uploadedFiles[0];
         if (!latest) return;
-        window.open(getFileUrl(latest), "_blank");
+        window.open(buildFileUrl(latest), "_blank");
     };
 
     const openFilePicker = () => {
@@ -154,11 +170,16 @@
         }
     };
 
-    const createUploadItem = (/** @type {File} */ file) => {
+    const createUploadItem = (
+        /** @type {File} */ file,
+        /** @type {string} */ displayName,
+        /** @type {boolean} */ isPrivate,
+        /** @type {string} */ password,
+    ) => {
         /** @type {typeof uploadItems[number]} */
         const item = {
             id: filesCount++,
-            name: file.name,
+            name: displayName,
             size: file.size,
             loaded: 0,
             total: file.size,
@@ -168,6 +189,8 @@
             speed: null,
             status: "uploading",
             attempt: 0,
+            isPrivate,
+            password,
         };
         return item;
     };
@@ -201,7 +224,11 @@
 
         if ($userSettings.stripExif && file.type.startsWith("image/")) {
             try {
-                formData.append("file", await removeExif(file));
+                formData.append(
+                    "file",
+                    await removeExif(file),
+                    item.name || file.name,
+                );
             } catch (err) {
                 item.status = "error";
                 refreshUploads();
@@ -210,7 +237,11 @@
                 return;
             }
         } else {
-            formData.append("file", file);
+            formData.append("file", file, item.name || file.name);
+        }
+        formData.append("visibility", item.isPrivate ? "private" : "public");
+        if (item.isPrivate && item.password) {
+            formData.append("password", item.password);
         }
 
         const xhr = new XMLHttpRequest();
@@ -271,13 +302,15 @@
                     return [
                         {
                             id: res.id,
-                            name: file.name,
+                            name: item.name || file.name,
                             ext: res.ext,
                             type: file.type || res.type,
                             key: res.key,
                             date: Date.now(),
                             checksum: res.checksum,
                             origin: res.origin,
+                            private: Boolean(res.private),
+                            password: item.password || "",
                         },
                         ...arr,
                     ];
@@ -334,22 +367,72 @@
         xhr.send(formData);
     };
 
-    async function upload(/** @type {FileList} */ files) {
-        disabled = true;
+    const sanitizeName = (/** @type {string} */ value) => {
+        return value
+            .trim()
+            .replace(/[/\\]/g, "_")
+            .replace(/[\r\n]/g, "_")
+            .slice(0, 180);
+    };
 
-        for (const file of files) {
-            const item = createUploadItem(file);
-            uploadItems = [item, ...uploadItems];
+    const buildDisplayName = (
+        /** @type {string} */ original,
+        /** @type {string} */ rename,
+    ) => {
+        const cleaned = sanitizeName(rename || "");
+        if (!cleaned) return original;
+        const dot = original.lastIndexOf(".");
+        const ext = dot > 0 ? original.slice(dot) : "";
+        if (cleaned.includes(".")) return cleaned;
+        return `${cleaned}${ext}`;
+    };
+
+    const prepareUploads = (/** @type {FileList} */ files) => {
+        const list = Array.from(files || []);
+        if (!list.length) return;
+        pendingUploads = list.map((file) => ({
+            id: pendingCount++,
+            file,
+            name: file.name,
+            isPrivate: false,
+            password: "",
+        }));
+        preUploadDialog.showModal();
+    };
+
+    const confirmPendingUploads = () => {
+        if (pendingUploads.some((item) => item.isPrivate && !item.password.trim())) {
+            notifyError("Password is required for private files");
+            return;
+        }
+        const items = pendingUploads;
+        pendingUploads = [];
+        preUploadDialog.close();
+        disabled = true;
+        for (const entry of items) {
+            const displayName = buildDisplayName(entry.file.name, entry.name);
+            const uploadItem = createUploadItem(
+                entry.file,
+                displayName,
+                entry.isPrivate,
+                entry.password,
+            );
+            uploadItems = [uploadItem, ...uploadItems];
             refreshUploads();
             updateOverallProgress();
-            startUpload(file, item, 0);
+            startUpload(entry.file, uploadItem, 0);
         }
         disabled = false;
-    }
+    };
+
+    const cancelPendingUploads = () => {
+        pendingUploads = [];
+        preUploadDialog.close();
+    };
 
     const fileInputChange = () => {
         if (!fileInput.files) return;
-        upload(fileInput.files);
+        prepareUploads(fileInput.files);
     };
 
     const dragFiles = (/** @type {DragEvent} */ e) => {
@@ -371,19 +454,26 @@
 
         e.preventDefault();
         dropZone.style.visibility = "hidden";
-        upload(e.dataTransfer.files);
+        prepareUploads(e.dataTransfer.files);
     };
 
     const pasteFiles = (/** @type {ClipboardEvent} */ e) => {
         if (disabled || !e.clipboardData?.files) return;
 
         e.preventDefault();
-        upload(e.clipboardData.files);
+        prepareUploads(e.clipboardData.files);
     };
 
     onMount(() => {
         mountDate = Date.now();
         loadFiles();
+        const handlePreUploadClose = () => {
+            pendingUploads = [];
+        };
+        preUploadDialog?.addEventListener("close", handlePreUploadClose);
+        return () => {
+            preUploadDialog?.removeEventListener("close", handlePreUploadClose);
+        };
     });
 </script>
 
@@ -402,6 +492,53 @@
 <Dialog bind:node={errorDialog}>
     <section>
         <Errors></Errors>
+    </section>
+</Dialog>
+
+<Dialog bind:node={preUploadDialog}>
+    <section class="preupload">
+        <h3>Prepare upload</h3>
+        {#if pendingUploads.length}
+            <div class="preupload-list">
+                {#each pendingUploads as item (item.id)}
+                    <div class="preupload-item">
+                        <div class="preupload-row">
+                            <span class="preupload-label">Name</span>
+                            <input
+                                type="text"
+                                class="preupload-input"
+                                bind:value={item.name}
+                                placeholder={item.file.name}
+                            />
+                        </div>
+                        <div class="preupload-row">
+                            <label class="preupload-toggle">
+                                <input type="checkbox" bind:checked={item.isPrivate} />
+                                Private
+                            </label>
+                            {#if item.isPrivate}
+                                <input
+                                    type="password"
+                                    class="preupload-input"
+                                    bind:value={item.password}
+                                    placeholder="Password"
+                                />
+                            {/if}
+                        </div>
+                    </div>
+                {/each}
+            </div>
+            <div class="preupload-actions">
+                <button class="upload-label" on:click={confirmPendingUploads}>
+                    Upload
+                </button>
+                <button class="upload-label secondary" on:click={cancelPendingUploads}>
+                    Cancel
+                </button>
+            </div>
+        {:else}
+            <p>No files selected.</p>
+        {/if}
     </section>
 </Dialog>
 
@@ -500,6 +637,86 @@
         background-size: 30%;
     }
 
+    .preupload {
+        min-width: min(640px, 90vw);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .preupload-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-height: 50vh;
+        overflow: auto;
+    }
+
+    .preupload-item {
+        border: 2px solid rgb(var(--outl1));
+        border-radius: 0;
+        box-shadow: 3px 3px 0 rgb(var(--primary));
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background: rgb(var(--bg0));
+    }
+
+    .preupload-row {
+        display: grid;
+        grid-template-columns: 70px 1fr;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .preupload-label {
+        font-size: 0.85rem;
+        color: rgb(var(--fg2));
+    }
+
+    .preupload-input {
+        width: 100%;
+        min-width: 0;
+        background: rgb(var(--bg));
+        border: 2px solid rgb(var(--outl2));
+        border-radius: 5px;
+        color: rgb(var(--fg2));
+        padding: 6px 10px;
+    }
+
+    .preupload-toggle {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        font-size: 0.9rem;
+    }
+
+    .preupload-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+    }
+
+    @media screen and (max-width: 640px) {
+        .preupload {
+            min-width: min(520px, 92vw);
+        }
+
+        .preupload-row {
+            grid-template-columns: 1fr;
+        }
+
+        .preupload-label {
+            font-weight: 600;
+        }
+
+        .preupload-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }
+
     .maintenance {
         font-weight: 700;
         border-left: 3px solid #ffcc32;
@@ -536,13 +753,24 @@
         }
     }
 
+    .upload-label.secondary {
+        background: rgb(var(--bg));
+        color: rgb(var(--fg));
+        border-style: dashed;
+        text-shadow: none;
+    }
+
+    .upload-label.secondary:hover {
+        background: rgb(var(--bg0));
+    }
+
     .uploaded-files {
         margin: 20px 0;
         display: flex;
         flex-direction: column;
-        width: fit-content;
-        min-width: 320px;
-        max-width: 350px;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
     }
 
     .upload-progress {
@@ -550,7 +778,7 @@
         display: flex;
         flex-direction: column;
         gap: 8px;
-        max-width: 520px;
+        max-width: 100%;
     }
 
     .upload-item {
@@ -572,6 +800,18 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    @media screen and (max-width: 640px) {
+        .upload-item-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+        }
+
+        .upload-name {
+            max-width: 100%;
+        }
     }
 
     .upload-meta {

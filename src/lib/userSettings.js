@@ -4,9 +4,11 @@ import { writable, get } from "svelte/store";
 const defaultSettings = {
     "appendFileExt": false,
     "rememberFileHistory": true,
+    "autoCopyLink": false,
     "fileContentDisposition": true,
     "stripExif": false,
     "showThumbnails": true,
+    "compactFileList": false,
     "theme": "neobrutalism"
 }
 

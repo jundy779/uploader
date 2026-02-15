@@ -174,6 +174,16 @@
                 <label class="option">
                     <input
                         type="checkbox"
+                        id="auto-copy-link"
+                        name="auto-copy-link"
+                        bind:checked={$userSettings.autoCopyLink}
+                        on:change={saveSettings}
+                    />
+                    Auto-copy link after upload
+                </label>
+                <label class="option">
+                    <input
+                        type="checkbox"
                         id="file-disposition"
                         name="file-disposition"
                         bind:checked={$userSettings.fileContentDisposition}
@@ -205,6 +215,16 @@
                         on:change={saveSettings}
                     />
                     Show file thumbnails
+                </label>
+                <label class="option">
+                    <input
+                        type="checkbox"
+                        id="file-compact"
+                        name="file-compact"
+                        bind:checked={$userSettings.compactFileList}
+                        on:change={saveSettings}
+                    />
+                    Compact mode for file list
                 </label>
             </div>
         </details>

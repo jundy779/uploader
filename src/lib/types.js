@@ -20,9 +20,11 @@
  * @typedef {Object} UserSettings
  * @property {Boolean} appendFileExt
  * @property {Boolean} rememberFileHistory
+ * @property {Boolean} autoCopyLink
  * @property {Boolean} fileContentDisposition
  * @property {Boolean} stripExif
  * @property {Boolean} showThumbnails
+ * @property {Boolean} compactFileList
  * @property {Theme} theme
  */
 

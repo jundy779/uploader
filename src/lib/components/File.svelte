@@ -131,7 +131,7 @@
     </div>
 </Dialog>
 
-<div class="file">
+<div class="file" class:compact={$userSettings.compactFileList}>
     <div class="name" title={file.name}>{file.name}</div>
     <div class="details">
         <input tabindex="0" bind:this={urlInput} on:focus={copy} on:select={copy} on:click={copy} class="link" type="text" readonly value={fileUrl} />
@@ -238,6 +238,31 @@
             &:focus {
                 background-color: rgb(var(--bg_h));
             }
+        }
+
+        &.compact {
+            padding: 6px 6px;
+            border-radius: 8px;
+        }
+
+        &.compact .details {
+            font-size: 1rem;
+        }
+
+        &.compact .name {
+            font-size: 1rem;
+        }
+
+        &.compact .link {
+            font-size: 0.8rem;
+        }
+
+        &.compact .footer {
+            font-size: 0.75rem;
+        }
+
+        &.compact .details button {
+            width: 28px;
         }
 
     @media screen and (max-width: 640px) {

@@ -298,24 +298,30 @@
                 updateOverallProgress();
 
                 loadFiles();
+                const newFile = {
+                    id: res.id,
+                    name: item.name || file.name,
+                    ext: res.ext,
+                    type: file.type || res.type,
+                    key: res.key,
+                    date: Date.now(),
+                    checksum: res.checksum,
+                    origin: res.origin,
+                    private: Boolean(res.private),
+                    password: item.password || "",
+                };
                 uploadedFiles.update((arr) => {
                     return [
-                        {
-                            id: res.id,
-                            name: item.name || file.name,
-                            ext: res.ext,
-                            type: file.type || res.type,
-                            key: res.key,
-                            date: Date.now(),
-                            checksum: res.checksum,
-                            origin: res.origin,
-                            private: Boolean(res.private),
-                            password: item.password || "",
-                        },
+                        newFile,
                         ...arr,
                     ];
                 });
                 saveFiles();
+                if ($userSettings.autoCopyLink && navigator?.clipboard?.writeText) {
+                    try {
+                        navigator.clipboard.writeText(buildFileUrl(newFile));
+                    } catch (_) {}
+                }
                 scheduleCleanupDoneUpload(item.id);
             } catch (err) {
                 retryUpload(
@@ -543,13 +549,6 @@
 </Dialog>
 
 <section>
-    <!--
-    <p class="maintenance">
-        ⚠️ Maintenance is in progress<br>
-        File uploading and deletion will be temporarily unavailable<br>
-        Estimated downtime is around X minutes
-    </p>
-    -->
     {#if /(kappa.lol|gachi.gay|femboy.beauty)$/.test($page.url.hostname) }
         <p style="display: inline-block; margin: 0;">
             <b>{$page.url.hostname}</b> is no longer hosted by me. Past files will not be recovered<br/>
@@ -715,13 +714,6 @@
             flex-direction: column;
             align-items: stretch;
         }
-    }
-
-    .maintenance {
-        font-weight: 700;
-        border-left: 3px solid #ffcc32;
-        padding: 0 10px;
-        margin: 5px;
     }
 
     #file-input {

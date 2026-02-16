@@ -171,11 +171,64 @@ button, .upload-label {
 }
 
 /* Headers */
-h1, h2, h3 {
+h1, h2, h3, summary {
     text-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 .name.pride {
     /* Make the title pop more */
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+/* Uploaders Page / API Docs */
+details {
+    margin-bottom: 20px;
+    background: var(--glass-bg);
+    border-radius: 16px;
+    border: 1px solid var(--glass-border);
+    padding: 10px 20px;
+    backdrop-filter: blur(5px);
+}
+
+summary {
+    padding: 10px 0;
+    outline: none;
+}
+
+.api-block, .api-card {
+    background: rgba(0, 0, 0, 0.2) !important;
+    border: 1px solid var(--glass-border) !important;
+    backdrop-filter: blur(10px);
+    border-radius: 12px !important;
+    color: var(--fg);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.codeblock, pre {
+    background: rgba(0, 0, 0, 0.4) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+    color: #a5b4fc !important; /* Light indigo for code */
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.api-title {
+    color: var(--secondary);
+    text-shadow: 0 0 5px rgba(78, 205, 196, 0.4);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th, td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+th {
+    color: var(--secondary);
 }

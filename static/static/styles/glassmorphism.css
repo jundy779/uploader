@@ -1,35 +1,39 @@
-/* Vibrant Glassmorphism Theme (Apple Style) */
+/* Vibrant Glassmorphism Theme (Refined) */
 
 :root {
-    /* Color Palette */
-    --primary: 255 107 107;      /* Coral */
-    --secondary: 78 205 196;     /* Turqoise */
-    --accent: 147 51 234;        /* Purple */
+    /* Color Palette - Matching the Reference */
+    --primary: 255 255 255;      /* White text mostly */
+    --secondary: 167 139 250;    /* Soft Purple */
+    --accent: 244 114 182;       /* Pink */
     
-    /* Background Mesh Gradient */
-    --bg-gradient: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
-                   radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
-                   radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%), 
-                   radial-gradient(at 0% 50%, hsla(339,49%,30%,1) 0, transparent 50%), 
-                   radial-gradient(at 100% 50%, hsla(339,49%,30%,1) 0, transparent 50%), 
-                   radial-gradient(at 0% 100%, hsla(339,49%,30%,1) 0, transparent 50%), 
-                   radial-gradient(at 100% 100%, hsla(225,39%,30%,1) 0, transparent 50%);
-                   
+    /* Background Gradient - Exact match attempt */
+    --bg-gradient: 
+        radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+        radial-gradient(at 50% 0%, hsla(260, 100%, 70%, 0.3) 0, transparent 50%), /* Top light purple glow */
+        radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%), 
+        radial-gradient(at 0% 50%, hsla(260, 60%, 50%, 0.4) 0, transparent 50%), /* Mid purple */
+        radial-gradient(at 100% 50%, hsla(330, 60%, 50%, 0.4) 0, transparent 50%), /* Mid pink */
+        radial-gradient(at 0% 100%, hsla(240, 50%, 30%, 1) 0, transparent 50%), 
+        radial-gradient(at 100% 100%, hsla(280, 50%, 30%, 1) 0, transparent 50%);
+
+    /* Base Background Color */
+    --bg-base: #5b4a96; /* Lighter base for blending */
+
     /* Text */
     --fg: 255 255 255;
-    --fg2: 226 232 240;
+    --fg2: 230 230 255;
     
-    /* Glass Effect Variables */
-    --glass-bg: rgba(255, 255, 255, 0.08); /* More transparent */
-    --glass-border: rgba(255, 255, 255, 0.3); /* Brighter border for 3D effect */
+    /* Glass Effect Variables - Enhanced */
+    --glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.05));
+    --glass-border: rgba(255, 255, 255, 0.4);
     --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.25);
-    --glass-blur: blur(16px);
-    --glass-radius: 24px; /* Large radius */
+    --glass-blur: blur(20px);
+    --glass-radius: 32px; /* Super rounded like reference */
 
     /* Mapped Variables */
-    --bg: 15 23 42;
+    --bg: 15 23 42; 
     --bg0: 30 41 59;
-    --bg2: 51 65 85;
+    --bg2: 51 65 85; 
     --bg_h: 255 255 255;
     
     --outl1: 255 255 255;
@@ -37,198 +41,131 @@
 }
 
 body, main {
-    background-color: #0f172a;
+    background-color: var(--bg-base);
     background-image: var(--bg-gradient) !important;
     background-attachment: fixed !important;
-    background-size: 200% 200%;
-    animation: gradient 15s ease infinite;
+    background-size: 150% 150%;
+    animation: gradient 20s ease infinite;
     color: rgb(var(--fg));
     min-height: 100vh;
+    font-family: 'Outfit', 'Inter', sans-serif; /* Cleaner font if available */
 }
 
 @keyframes gradient {
-	0% {
-		background-position: 0% 50%;
-	}
-	50% {
-		background-position: 100% 50%;
-	}
-	100% {
-		background-position: 0% 50%;
-	}
+	0% { background-position: 0% 50%; }
+	50% { background-position: 100% 50%; }
+	100% { background-position: 0% 50%; }
 }
 
 /* Glass Card - The Core Style */
 .wrapper, .settings, Dialog section, .glass-card {
     background: var(--glass-bg) !important;
-    box-shadow: var(--glass-shadow);
+    box-shadow: 
+        0 8px 32px 0 rgba(0, 0, 0, 0.3),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.2); /* Inner stroke */
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
     border-radius: var(--glass-radius) !important;
     border: 1px solid var(--glass-border) !important;
-    border-top: 1px solid rgba(255,255,255,0.5) !important; /* Top highlight for depth */
-    border-left: 1px solid rgba(255,255,255,0.5) !important; /* Left highlight */
+    border-top: 1px solid rgba(255,255,255,0.6) !important;
+    border-left: 1px solid rgba(255,255,255,0.6) !important;
     color: rgb(var(--fg));
 }
 
-/* Specific component tweaks */
+/* Nav */
 nav {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
     padding-bottom: 15px;
-    margin-bottom: 25px;
+    margin-bottom: 30px;
 }
 
 .support-btn {
-    background: rgba(255, 255, 255, 0.1) !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-radius: 12px !important;
-    backdrop-filter: blur(4px);
-    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.support-btn:hover {
-    background: rgba(255, 255, 255, 0.2) !important;
-    transform: scale(1.05);
+    background: linear-gradient(90deg, #ff8a00, #e52e71) !important; /* Instagram-ish gradient */
+    border: none !important;
+    border-radius: 20px !important; /* Pill shape */
+    box-shadow: 0 4px 15px rgba(229, 46, 113, 0.4);
+    font-weight: bold;
+    letter-spacing: 0.5px;
 }
 
 /* Settings Area */
 .settings {
-    background: rgba(0, 0, 0, 0.2) !important;
+    background: rgba(0, 0, 0, 0.15) !important;
     border: none !important;
+    border-radius: 20px !important;
 }
 
 /* File List Items */
 .file, .upload-item {
-    background: rgba(255, 255, 255, 0.05) !important;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    border-radius: 16px !important;
-    margin-bottom: 16px !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 20px !important;
+    margin-bottom: 12px !important;
     box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    transition: transform 0.3s, background 0.3s;
 }
 
 .file:hover, .upload-item:hover {
-    transform: translateY(-4px) scale(1.01);
-    background: rgba(255, 255, 255, 0.1) !important;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    transform: scale(1.01);
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
 }
 
 /* Inputs */
 input[type="text"], input[type="password"], textarea, select {
-    background: rgba(0, 0, 0, 0.25) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
     color: white !important;
     border-radius: 12px !important;
-    padding: 10px 14px !important;
-    transition: all 0.3s;
+    padding: 10px 16px !important;
 }
 
 input:focus {
-    background: rgba(0, 0, 0, 0.4) !important;
-    border-color: rgba(255, 255, 255, 0.5) !important;
-    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-color: rgba(255, 255, 255, 0.6) !important;
 }
 
 /* Buttons */
 button, .upload-label {
-    backdrop-filter: blur(8px);
-    border-radius: 12px !important;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); 
-    /* Bouncy animation */
+    border-radius: 16px !important;
 }
 
 .upload-label {
-    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    color: white !important;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-    padding: 12px 24px !important;
-    font-weight: 600;
+    background: rgba(255, 255, 255, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    padding: 14px 28px !important;
 }
 
 .upload-label:hover {
-    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%) !important;
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.25);
-    border-color: rgba(255, 255, 255, 0.6) !important;
+    background: rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
 }
 
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 10px;
-}
-::-webkit-scrollbar-track {
-  background: transparent; 
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2); 
-  border-radius: 10px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.4); 
-}
-
-/* Headers */
-h1, h2, h3, summary {
-    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.name.pride {
-    /* Make the title pop more */
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-}
-
-/* Uploaders Page / API Docs */
+/* Uploaders Page specific */
 details {
-    margin-bottom: 20px;
-    background: var(--glass-bg);
-    border-radius: 16px;
-    border: 1px solid var(--glass-border);
-    padding: 10px 20px;
-    backdrop-filter: blur(5px);
-}
-
-summary {
-    padding: 10px 0;
-    outline: none;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .api-block, .api-card {
-    background: rgba(0, 0, 0, 0.2) !important;
-    border: 1px solid var(--glass-border) !important;
-    backdrop-filter: blur(10px);
-    border-radius: 12px !important;
-    color: var(--fg);
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    background: rgba(0, 0, 0, 0.25) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 .codeblock, pre {
-    background: rgba(0, 0, 0, 0.4) !important;
+    background: #1e1e2e !important; /* Darker clean background for code */
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 8px !important;
-    color: #a5b4fc !important; /* Light indigo for code */
-    font-family: 'JetBrains Mono', monospace;
 }
 
-.api-title {
-    color: var(--secondary);
-    text-shadow: 0 0 5px rgba(78, 205, 196, 0.4);
-}
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); border-radius: 4px; }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
-
-th, td {
-    padding: 8px;
-    text-align: left;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-th {
-    color: var(--secondary);
-}
+/* Text Shadows */
+h1 { text-shadow: 0 4px 10px rgba(0,0,0,0.3); font-weight: 800; }
+a { color: #fff; text-shadow: 0 0 5px rgba(255,255,255,0.5); }

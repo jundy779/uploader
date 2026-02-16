@@ -1,4 +1,5 @@
 import { MongoClient, GridFSBucket, ObjectId } from "mongodb";
+import { env } from "$env/dynamic/private";
 
 /**
  * @typedef {Object} StoredFile
@@ -21,9 +22,9 @@ import { MongoClient, GridFSBucket, ObjectId } from "mongodb";
  * @property {string} [r2Key]
  */
 
-const uri = process.env.MONGODB_URI || "";
-const dbName = process.env.MONGODB_DB || "uploader";
-const bucketName = process.env.MONGODB_BUCKET || "uploads";
+const uri = env.MONGODB_URI || "";
+const dbName = env.MONGODB_DB || "uploader";
+const bucketName = env.MONGODB_BUCKET || "uploads";
 
 /** @type {MongoClient | null} */
 let client = null;

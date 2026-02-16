@@ -1,229 +1,204 @@
-/* Neo-Brutalism Theme (Saweria Style) */
 :root {
-    --bg: 243 205 97; /* Saweria-ish Yellow/Orange Main BG */
-    --bg_h: 255 255 255;
-    --bg0: 255 255 255;
-    --bg2: 243 205 97;
-    
+    --bg: 255 248 221;
+    --bg_h: 255 227 172;
+    --bg0: 255 214 140;
+    --bg2: 255 200 108;
+    --accent-blue: 109 164 255;
+    --accent-blue-dark: 76 132 230;
+    --accent-blue-soft: 202 222 255;
+    --button-blue: 173 205 255;
+    --button-blue-hover: 140 182 255;
     --fg: 0 0 0;
-    --fg2: 24 24 27;
-    
-    --primary: 0 0 0; /* Black borders */
-    --secondary: 255 255 255;
-    --accent: 79 70 229; /* Indigo for links/accents */
-    
-    /* Neo-Brutalism Hard Shadow */
-    --shadow-hard: 4px 4px 0px 0px #000000;
-    --shadow-hard-hover: 6px 6px 0px 0px #000000;
-    --shadow-inset: inset 4px 4px 0px 0px rgba(0,0,0,0.1);
-    
-    --border-thick: 3px solid #000000;
-    --radius: 8px; /* Slightly rounded, not pill */
+    --fg2: 0 0 0;
+    --primary: 0 0 0;
+    --outl1: 0 0 0;
+    --outl2: 0 0 0;
+    --blue: 0 110 255;
+    --sky: 255 0 120;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
 }
 
 body {
-    background-color: var(--bg);
-    color: var(--fg);
-    font-family: 'Inter', 'Archivo Black', sans-serif; /* Bold & Modern */
-    background-image: radial-gradient(#000 1px, transparent 1px);
-    background-size: 24px 24px; /* Dot pattern like Saweria/Gumroad */
+    background-color: rgb(var(--bg));
+    color: rgb(var(--fg));
+    font-family: "Arial Black", system-ui, -apple-system, sans-serif;
+    letter-spacing: 0.2px;
 }
 
 a {
-    color: var(--fg);
-    text-decoration: underline;
+    font-weight: 700;
     text-decoration-thickness: 2px;
+    text-underline-offset: 2px;
+}
+
+button,
+input,
+textarea,
+select {
+    font: inherit;
+}
+
+button,
+input[type="text"],
+.upload-label,
+.file,
+.settings,
+.wrapper,
+dialog,
+table,
+.drop-zone {
+    border: 3px solid rgb(var(--primary));
+    box-shadow: 4px 4px 0 rgb(var(--primary));
+    border-radius: 0;
+}
+
+button,
+.upload-label {
+    text-transform: uppercase;
     font-weight: 800;
+    letter-spacing: 0.4px;
+    background: rgb(var(--button-blue));
+    background-image: none;
 }
 
+button:hover,
+.upload-label:hover,
 a:hover {
-    background: #000;
-    color: #fff;
-    text-decoration: none;
+    filter: contrast(1.15) saturate(1.1);
 }
 
-/* Core Components */
-.wrapper, .settings, Dialog section, .glass-card {
-    background-color: white;
-    border: var(--border-thick);
-    box-shadow: var(--shadow-hard);
-    border-radius: var(--radius);
-    padding: 24px !important;
-    color: black;
+body button:hover,
+body .upload-label:hover,
+body .support-btn:hover {
+    background-color: rgb(var(--button-blue-hover));
 }
 
-/* Hover effect */
-.wrapper:hover, .glass-card:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: var(--shadow-hard-hover);
+input[type="text"],
+input[type="checkbox"] {
+    background-color: rgb(var(--bg_h));
+    color: rgb(var(--fg));
 }
 
-/* Nav */
+input[type="text"]:focus {
+    outline: 3px solid rgb(var(--primary));
+}
+
+hr {
+    height: 3px;
+    background: rgb(var(--primary));
+    border: 0;
+    box-shadow: none;
+}
+
+table {
+    background-color: rgb(var(--bg0));
+    border-collapse: separate;
+    border-spacing: 6px;
+}
+
+td,
+th {
+    background-color: rgb(var(--bg2));
+    padding: 5px 8px;
+    border: 0;
+    box-shadow: none;
+}
+
+dialog {
+    background-color: rgb(var(--bg_h));
+}
+
+.upload-label {
+    box-shadow: 6px 6px 0 rgb(var(--primary));
+}
+
+.file .details {
+    box-shadow: none;
+    border: 2px solid rgb(var(--primary));
+}
+
+.link {
+    background-color: rgb(var(--bg));
+}
+
+.thumbnail {
+    border: 3px solid rgb(var(--primary));
+    box-shadow: 4px 4px 0 rgb(var(--primary));
+}
+
+/* Nav Fixes */
 nav {
-    background: white;
-    border: var(--border-thick);
-    box-shadow: var(--shadow-hard);
-    border-radius: var(--radius);
-    padding: 15px 20px; /* More padding */
-    margin-bottom: 30px;
     display: flex;
-    justify-content: flex-start; /* Align left */
-    gap: 10px;
+    flex-wrap: wrap;
     align-items: center;
-    flex-wrap: wrap; /* Prevent overflow */
+    gap: 15px;
+    padding: 15px;
 }
 
-/* Fix link hover in nav */
+/* Fix black box on nav links */
 nav a:hover {
-    background: transparent !important;
+    background: transparent;
+    color: rgb(var(--fg));
     text-decoration: underline;
-    color: black !important;
+    filter: contrast(1.15) saturate(1.1);
 }
 
-/* Settings */
+/* Settings Width Fix */
 .settings {
-    width: 100%; /* Default to full width for consistency */
-    max-width: 800px; /* But cap it */
-    background: white;
-    transition: all 0.1s ease;
-    margin: 0 auto; /* Center it */
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
 }
 
-.settings:not([open]) {
-    padding: 0 !important;
-    border-radius: 50px;
-    width: fit-content; /* Only shrink when closed */
+.settings summary {
+    padding: 15px;
 }
 
 .settings[open] {
     padding: 24px !important;
 }
 
-.settings summary {
-    padding: 12px 24px;
-    cursor: pointer;
-    font-weight: 800;
-    text-transform: uppercase;
-    color: black;
-    list-style: none;
-}
-
-/* Uploaders API Section */
+/* Uploaders API Fixes */
 details {
-    background-color: white;
-    border: var(--border-thick);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-hard);
-    margin-bottom: 24px;
-    transition: all 0.1s ease;
-    /* Remove overflow hidden to avoid cutting off chunky borders/shadows if they overlap */
-}
-
-details[open] {
-    box-shadow: 6px 6px 0px 0px #000;
+    margin-bottom: 20px;
 }
 
 summary {
-    padding: 20px 24px; /* More padding */
+    padding: 15px;
     cursor: pointer;
     font-weight: 800;
     text-transform: uppercase;
-    border-bottom: 2px solid transparent;
-    transition: background 0.1s;
-    font-size: 1.1rem; /* Larger header */
-    display: flex; /* Better alignment */
-    align-items: center;
-    justify-content: space-between;
 }
 
-summary:hover {
-    background: #fef9c3;
-}
-
-details[open] summary {
-    border-bottom: var(--border-thick);
-    background: #fefce8;
-}
-
-/* Fix content padding inside details */
-details > div, details > p {
-    padding: 24px; /* Spacious padding for content */
-}
-
-.api-block {
-    background-color: #f1f5f9;
-    border: 2px solid #000;
-    border-radius: 6px;
-    padding: 24px;
-    margin-bottom: 24px;
-    box-shadow: 4px 4px 0px 0px #000;
-}
-
-.api-card {
-    background-color: white;
-    border: 2px solid #000;
-    border-radius: 6px;
-    box-shadow: 4px 4px 0px 0px #000;
+/* Fix cramped content */
+details > div, details > p, .api-block {
     padding: 20px;
-    transition: transform 0.1s;
-    height: 100%; /* Equal height */
-    display: flex;
-    flex-direction: column;
 }
 
-.api-card:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0px 0px #000;
-    background: #daeaf6; 
-}
-
-.codeblock, pre {
-    background: #1e1e1e !important;
-    border: 2px solid #000 !important;
-    border-radius: 4px;
-    padding: 16px !important;
-    font-family: 'JetBrains Mono', monospace;
-    color: #4ade80; 
-    box-shadow: 4px 4px 0px 0px #000000;
-    font-size: 0.9rem;
-    line-height: 1.5;
-    overflow-x: auto;
-}
-
-/* Tables */
+/* Table Spacing */
 details table {
     width: 100%;
     margin-top: 10px;
-    border-spacing: 0; 
-    border-collapse: separate; /* Needed for border radius on tables if any */
 }
 
-details th {
-    color: black;
-    border-bottom: 3px solid black;
-    padding: 12px 16px;
-    text-transform: uppercase;
-    font-weight: 900;
+details th, details td {
+    padding: 10px;
     text-align: left;
-    font-size: 0.9rem;
 }
 
-details td {
-    padding: 12px 16px;
-    border-bottom: 1px solid #e5e7eb;
-    font-weight: 600;
-    vertical-align: top; /* Align top for long text */
+.support-btn {
+    border: 3px solid rgb(var(--primary));
+    box-shadow: 4px 4px 0 rgb(var(--primary));
+    background: rgb(var(--button-blue));
+    background-image: none;
 }
 
-details tr:last-child td {
-    border-bottom: none;
+.name {
+    text-transform: uppercase;
+    text-shadow: none;
 }
-
-/* Scrollbar */
-::-webkit-scrollbar { width: 12px; }
-::-webkit-scrollbar-track { background: var(--bg); border-left: 2px solid black; }
-::-webkit-scrollbar-thumb { 
-    background: white; 
-    border: 2px solid black;
-}
-::-webkit-scrollbar-thumb:hover { background: #000; }

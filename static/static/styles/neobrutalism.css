@@ -1,157 +1,326 @@
+/* Neo-Brutalism Theme (Saweria Style) */
 :root {
-    --bg: 255 248 221;
-    --bg_h: 255 227 172;
-    --bg0: 255 214 140;
-    --bg2: 255 200 108;
-    --accent-blue: 109 164 255;
-    --accent-blue-dark: 76 132 230;
-    --accent-blue-soft: 202 222 255;
-    --button-blue: 173 205 255;
-    --button-blue-hover: 140 182 255;
+    --bg: 243 205 97; /* Saweria-ish Yellow/Orange Main BG */
+    --bg_h: 255 255 255;
+    --bg0: 255 255 255;
+    --bg2: 243 205 97;
+    
     --fg: 0 0 0;
-    --fg2: 0 0 0;
-    --primary: 0 0 0;
-    --outl1: 0 0 0;
-    --outl2: 0 0 0;
-    --blue: 0 110 255;
-    --sky: 255 0 120;
-}
-
-*,
-*::before,
-*::after {
-    box-sizing: border-box;
+    --fg2: 24 24 27;
+    
+    --primary: 0 0 0; /* Black borders */
+    --secondary: 255 255 255;
+    --accent: 79 70 229; /* Indigo for links/accents */
+    
+    /* Neo-Brutalism Hard Shadow */
+    --shadow-hard: 4px 4px 0px 0px #000000;
+    --shadow-hard-hover: 6px 6px 0px 0px #000000;
+    --shadow-inset: inset 4px 4px 0px 0px rgba(0,0,0,0.1);
+    
+    --border-thick: 3px solid #000000;
+    --radius: 8px; /* Slightly rounded, not pill */
 }
 
 body {
-    background-color: rgb(var(--bg));
-    color: rgb(var(--fg));
-    font-family: "Arial Black", system-ui, -apple-system, sans-serif;
-    letter-spacing: 0.2px;
+    background-color: var(--bg);
+    color: var(--fg);
+    font-family: 'Inter', 'Archivo Black', sans-serif; /* Bold & Modern */
+    background-image: radial-gradient(#000 1px, transparent 1px);
+    background-size: 24px 24px; /* Dot pattern like Saweria/Gumroad */
 }
 
 a {
-    font-weight: 700;
+    color: var(--fg);
+    text-decoration: underline;
     text-decoration-thickness: 2px;
-    text-underline-offset: 2px;
-}
-
-button,
-input,
-textarea,
-select {
-    font: inherit;
-}
-
-button,
-input[type="text"],
-.upload-label,
-.file,
-.settings,
-.wrapper,
-dialog,
-table,
-.drop-zone {
-    border: 3px solid rgb(var(--primary));
-    box-shadow: 4px 4px 0 rgb(var(--primary));
-    border-radius: 0;
-}
-
-button,
-.upload-label {
-    text-transform: uppercase;
     font-weight: 800;
-    letter-spacing: 0.4px;
-    background: rgb(var(--button-blue));
-    background-image: none;
 }
 
-button:hover,
-.upload-label:hover,
 a:hover {
-    filter: contrast(1.15) saturate(1.1);
+    background: #000;
+    color: #fff;
+    text-decoration: none;
 }
 
-body button:hover,
-body .upload-label:hover,
-body .support-btn:hover {
-    background-color: rgb(var(--button-blue-hover));
+/* Core Components */
+.wrapper, .settings, Dialog section, .glass-card {
+    background-color: white;
+    border: var(--border-thick);
+    box-shadow: var(--shadow-hard);
+    border-radius: var(--radius);
+    padding: 24px !important;
+    color: black;
 }
 
-input[type="text"],
-input[type="checkbox"] {
-    background-color: rgb(var(--bg_h));
-    color: rgb(var(--fg));
+/* Hover effect */
+.wrapper:hover, .glass-card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: var(--shadow-hard-hover);
 }
 
-input[type="text"]:focus {
-    outline: 3px solid rgb(var(--primary));
+/* Nav */
+nav {
+    background: white;
+    border: var(--border-thick);
+    box-shadow: var(--shadow-hard);
+    border-radius: var(--radius);
+    padding: 15px;
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Ensure branding text fits */
+nav h1, nav a {
+    text-shadow: none !important;
+    color: black !important;
 }
 
 hr {
-    height: 3px;
-    background: rgb(var(--primary));
-    border: 0;
+    display: none !important;
+}
+
+/* Buttons */
+button, .upload-label, .support-btn {
+    background: #fff;
+    color: #000;
+    border: var(--border-thick);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-hard);
+    font-weight: 800;
+    padding: 12px 24px;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+}
+
+button:hover, .upload-label:hover, .support-btn:hover {
+    background: #bbf7d0; /* Mint green highlight */
+    transform: translate(-2px, -2px);
+    box-shadow: var(--shadow-hard-hover);
+}
+
+button:active, .upload-label:active {
+    transform: translate(2px, 2px);
     box-shadow: none;
 }
 
-table {
-    background-color: rgb(var(--bg0));
-    border-collapse: separate;
-    border-spacing: 6px;
+.upload-label.secondary {
+    background: #e2e8f0;
 }
 
-td,
-th {
-    background-color: rgb(var(--bg2));
-    padding: 5px 8px;
-    border: 0;
-    box-shadow: none;
+.upload-label.secondary:hover {
+    background: #cbd5e1;
 }
 
+/* Inputs */
+input[type="text"], input[type="password"], textarea, select {
+    background-color: white;
+    border: var(--border-thick);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-hard);
+    padding: 12px 16px;
+    color: black;
+    width: 100%;
+    outline: none;
+    font-weight: 600;
+    transition: all 0.1s;
+}
+
+input:focus {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px 0px #000;
+    background: #fff;
+}
+
+/* File List */
+.file, .upload-item {
+    background-color: white;
+    border: var(--border-thick);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-hard);
+    padding: 15px;
+    margin-bottom: 15px;
+    transition: transform 0.1s;
+}
+
+.file:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 5px 5px 0px 0px #000;
+}
+
+/* Modal / Pre-upload */
 dialog {
-    background-color: rgb(var(--bg_h));
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
 }
 
-.upload-label {
-    box-shadow: 6px 6px 0 rgb(var(--primary));
+dialog::backdrop {
+    background: rgba(243, 205, 97, 0.9); /* Yellow overlay */
+    backdrop-filter: none;
 }
 
-.file .details {
-    box-shadow: none;
-    border: 2px solid rgb(var(--primary));
+.preupload {
+    gap: 20px !important;
+    max-width: 500px !important;
+    width: 90vw;
 }
 
-.link {
-    background-color: rgb(var(--bg));
+.preupload-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px !important;
+    max-height: 60vh;
+    padding: 10px;
 }
 
-.thumbnail {
-    border: 3px solid rgb(var(--primary));
-    box-shadow: 4px 4px 0 rgb(var(--primary));
+.preupload-item {
+    background-color: #fff;
+    border: var(--border-thick);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-hard);
+    padding: 15px;
 }
 
-.settings summary,
-.settings .container,
-.settings .option {
-    border: 0;
-    box-shadow: none;
-    background-color: transparent;
+.preupload-row {
+    margin-bottom: 15px;
+    align-items: center;
+    display: flex;
+    gap: 15px;
+}
+
+.preupload-label {
+    min-width: 70px;
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+
+.preupload-input {
+    box-shadow: none !important; 
+    border: 2px solid #000 !important;
+}
+
+.preupload-input:focus {
+    background: #fdf6b2; /* Pale yellow focus */
+}
+
+/* Settings */
+.settings {
+    width: fit-content;
+    background: white;
+    transition: all 0.1s ease;
+}
+
+.settings:not([open]) {
+    padding: 0 !important;
+    border-radius: 50px;
+}
+
+.settings[open] {
+    padding: 24px !important;
 }
 
 .settings summary {
-    text-transform: uppercase;
+    padding: 12px 24px;
+    cursor: pointer;
     font-weight: 800;
-}
-
-.support-btn {
-    border: 3px solid rgb(var(--primary));
-    box-shadow: 4px 4px 0 rgb(var(--primary));
-    background: rgb(var(--button-blue));
-    background-image: none;
-}
-
-.name {
     text-transform: uppercase;
-    text-shadow: none;
+    color: black;
+    list-style: none;
 }
+
+/* Uploaders API Section */
+details {
+    background-color: white;
+    border: var(--border-thick);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-hard);
+    margin-bottom: 24px;
+    transition: all 0.1s ease;
+}
+
+details[open] {
+    box-shadow: 6px 6px 0px 0px #000;
+}
+
+summary {
+    padding: 18px 24px;
+    cursor: pointer;
+    font-weight: 800;
+    text-transform: uppercase;
+    border-bottom: 2px solid transparent;
+    transition: background 0.1s;
+}
+
+summary:hover {
+    background: #fef9c3;
+}
+
+details[open] summary {
+    border-bottom: var(--border-thick);
+    background: #fefce8;
+}
+
+.api-block {
+    background-color: #f1f5f9;
+    border: 2px solid #000;
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 2px 2px 0px 0px #000;
+}
+
+.api-card {
+    background-color: white;
+    border: 2px solid #000;
+    border-radius: 6px;
+    box-shadow: 3px 3px 0px 0px #000;
+    padding: 16px;
+    transition: transform 0.1s;
+}
+
+.api-card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 5px 5px 0px 0px #000;
+    background: #daeaf6; /* Light blue tint on hover */
+}
+
+.codeblock, pre {
+    background: #1e1e1e !important;
+    border: 2px solid #000 !important;
+    border-radius: 4px;
+    padding: 14px !important;
+    font-family: 'JetBrains Mono', monospace;
+    color: #00ff41; /* Hacker green text */
+    box-shadow: 4px 4px 0px 0px #000000;
+}
+
+/* Tables */
+details th {
+    color: black;
+    border-bottom: 3px solid black;
+    padding: 12px;
+    text-transform: uppercase;
+    font-weight: 900;
+}
+
+details td {
+    padding: 12px;
+    border-bottom: 1px solid black;
+    font-weight: 600;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 12px; }
+::-webkit-scrollbar-track { background: var(--bg); border-left: 2px solid black; }
+::-webkit-scrollbar-thumb { 
+    background: white; 
+    border: 2px solid black;
+}
+::-webkit-scrollbar-thumb:hover { background: #000; }

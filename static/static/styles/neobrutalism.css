@@ -131,65 +131,17 @@ dialog {
     box-shadow: 4px 4px 0 rgb(var(--primary));
 }
 
-/* Nav Fixes */
-nav {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 15px;
-    padding: 15px;
-}
-
-/* Fix black box on nav links */
-nav a:hover {
-    background: transparent;
-    color: rgb(var(--fg));
-    text-decoration: underline;
-    filter: contrast(1.15) saturate(1.1);
-}
-
-/* Settings Width Fix */
-.settings {
-    width: 100% !important; /* Force full width to override svelte style */
-    max-width: none !important;
-    margin: 0 0 20px 0 !important; /* Spacing bottom */
+.settings summary,
+.settings .container,
+.settings .option {
+    border: 0;
+    box-shadow: none;
+    background-color: transparent;
 }
 
 .settings summary {
-    padding: 15px;
-    width: 100%; /* Check this */
-}
-
-.settings[open] {
-    padding: 24px !important;
-}
-
-/* Uploaders API Fixes */
-details {
-    margin-bottom: 20px;
-}
-
-summary {
-    padding: 15px;
-    cursor: pointer;
-    font-weight: 800;
     text-transform: uppercase;
-}
-
-/* Fix cramped content */
-details > div, details > p, .api-block {
-    padding: 20px;
-}
-
-/* Table Spacing */
-details table {
-    width: 100%;
-    margin-top: 10px;
-}
-
-details th, details td {
-    padding: 10px;
-    text-align: left;
+    font-weight: 800;
 }
 
 .support-btn {

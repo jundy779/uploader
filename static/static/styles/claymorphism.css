@@ -1,66 +1,285 @@
+/* Claymorphism Theme (Fluffy 3D) */
 :root {
-    --bg: 247 241 234;
-    --bg_h: 252 246 240;
-    --bg0: 245 236 228;
-    --bg2: 238 228 218;
-    --fg: 28 20 18;
-    --fg2: 18 12 10;
-    --primary: 160 120 110;
-    --outl1: 225 205 195;
-    --outl2: 230 215 205;
-    --accent: 255 192 203;
+    --bg: 240 244 248; /* Light pastel background */
+    --bg_h: 248 250 252;
+    --bg0: 255 255 255;
+    
+    --fg: 71 85 105; /* Slate 600 */
+    --fg2: 100 116 139;
+    
+    --primary: 99 102 241; /* Indigo */
+    --secondary: 244 114 182; /* Pink */
+    
+    --accent: 255 255 255;
+    
+    --radius: 32px; /* Extra rounded for Clay */
+    
+    /* Clay Shadows - The Secret Sauce */
+    --clay-shadow: 
+        8px 8px 16px 0 rgba(166, 171, 189, 0.5), 
+        -8px -8px 16px 0 rgba(255, 255, 255, 0.8), 
+        inset 6px 6px 10px 0 rgba(255, 255, 255, 0.5), /* Inner Highlight */
+        inset -6px -6px 10px 0 rgba(166, 171, 189, 0.2); /* Inner Shadow */
+        
+    --clay-shadow-sm:
+        5px 5px 10px 0 rgba(166, 171, 189, 0.5), 
+        -5px -5px 10px 0 rgba(255, 255, 255, 0.8),
+        inset 4px 4px 6px 0 rgba(255, 255, 255, 0.5),
+        inset -4px -4px 6px 0 rgba(166, 171, 189, 0.2);
+
+    --clay-inset:
+        inset 6px 6px 10px 0 rgba(166, 171, 189, 0.4),
+        inset -6px -6px 10px 0 rgba(255, 255, 255, 0.8);
 }
 
 body {
     background-color: rgb(var(--bg));
     color: rgb(var(--fg));
+    font-family: 'Fredoka', 'Nunito', sans-serif; /* Rounder font for friendly look */
 }
 
-.wrapper,
-.file,
-.settings,
-dialog,
-.drop-zone {
-    background: linear-gradient(
-        160deg,
-        rgb(var(--bg_h)),
-        rgb(var(--bg0))
-    );
-    border-radius: 18px;
-    border: 1px solid rgb(var(--outl2));
-    box-shadow:
-        0 8px 0 rgb(255 255 255 / 0.7),
-        0 14px 26px rgb(160 120 110 / 0.18);
+a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 700;
 }
 
-button,
-.upload-label,
-.support-btn {
-    background: linear-gradient(
-        160deg,
-        rgb(var(--accent)),
-        rgb(255 214 222)
-    );
-    border-radius: 14px;
-    border: 1px solid rgb(var(--outl1));
-    color: rgb(var(--fg2));
-    box-shadow: 0 8px 0 rgb(255 255 255 / 0.7);
+/* Core Components */
+.wrapper, .settings, Dialog section, .glass-card {
+    background-color: var(--bg0);
+    border-radius: var(--radius);
+    box-shadow: var(--clay-shadow);
+    border: 2px solid rgba(255, 255, 255, 0.5); /* Subtle rim */
+    padding: 24px !important;
+    color: rgb(var(--fg));
+    transition: transform 0.2s;
 }
 
-input[type="text"] {
-    background-color: rgb(var(--bg_h));
-    border-radius: 12px;
-    border: 1px solid rgb(var(--outl2));
+/* Hover effect for cleaner interactiveness */
+.wrapper:hover, .glass-card:hover {
+    transform: translateY(-4px);
 }
 
-.file .details {
-    border-radius: 14px;
-    border: 1px solid rgb(var(--outl2));
-    background-color: rgb(var(--bg_h));
+/* Nav */
+nav {
+    border-bottom: 2px solid rgba(255, 255, 255, 0.5);
+    padding-bottom: 15px;
+    margin-bottom: 30px;
 }
 
 hr {
-    border: 0;
-    height: 2px;
-    background-color: rgb(var(--outl2));
+    display: none !important;
 }
+
+/* Buttons */
+button, .upload-label, .support-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    box-shadow: 
+        6px 6px 10px 0 rgba(99, 102, 241, 0.3),
+        inset 4px 4px 6px 0 rgba(255, 255, 255, 0.4),
+        inset -4px -4px 6px 0 rgba(0, 0, 0, 0.1);
+    font-weight: 700;
+    padding: 12px 28px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+}
+
+button:hover, .upload-label:hover, .support-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 
+        8px 8px 14px 0 rgba(99, 102, 241, 0.4),
+        inset 4px 4px 6px 0 rgba(255, 255, 255, 0.4),
+        inset -4px -4px 6px 0 rgba(0, 0, 0, 0.1);
+}
+
+button:active, .upload-label:active {
+    transform: scale(0.95);
+}
+
+.upload-label.secondary {
+    background: var(--bg0);
+    color: var(--primary);
+    box-shadow: var(--clay-shadow-sm);
+}
+
+.upload-label.secondary:hover {
+    background: white;
+}
+
+/* Inputs */
+input[type="text"], input[type="password"], textarea, select {
+    background-color: #f1f5f9;
+    border: none;
+    border-radius: 16px;
+    box-shadow: var(--clay-inset);
+    padding: 12px 18px;
+    color: rgb(var(--fg));
+    width: 100%;
+    outline: none;
+    transition: box-shadow 0.2s;
+}
+
+input:focus {
+    background-color: white;
+    box-shadow: 
+        inset 2px 2px 4px 0 rgba(166, 171, 189, 0.2),
+        0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+/* File List */
+.file, .upload-item {
+    background-color: var(--bg0);
+    border-radius: 20px;
+    box-shadow: var(--clay-shadow-sm);
+    padding: 18px;
+    margin-bottom: 20px;
+    border: 2px solid white;
+}
+
+/* Modal / Pre-upload */
+dialog {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+
+dialog::backdrop {
+    background: rgba(240, 244, 248, 0.8);
+    backdrop-filter: blur(8px);
+}
+
+.preupload {
+    gap: 20px !important;
+    max-width: 500px !important;
+    width: 90vw;
+}
+
+.preupload-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px !important;
+    max-height: 60vh;
+    padding: 10px;
+}
+
+.preupload-item {
+    background-color: var(--bg0);
+    border-radius: 20px;
+    box-shadow: var(--clay-shadow-sm);
+    padding: 15px;
+    border: 2px solid white;
+}
+
+.preupload-row {
+    margin-bottom: 12px;
+    align-items: center;
+    display: flex;
+    gap: 15px;
+}
+
+.preupload-label {
+    min-width: 60px;
+    font-weight: 700;
+    color: var(--fg2);
+}
+
+.preupload-input {
+    background-color: #f1f5f9;
+    box-shadow: none !important; 
+    border: 1px solid #e2e8f0;
+}
+
+/* Settings */
+.settings {
+    width: fit-content;
+    transition: all 0.3s ease;
+}
+
+.settings:not([open]) {
+    padding: 0 !important;
+    border-radius: 50px;
+}
+
+.settings[open] {
+    padding: 24px !important;
+}
+
+.settings summary {
+    padding: 12px 24px;
+    cursor: pointer;
+    font-weight: 700;
+    list-style: none;
+    color: rgb(var(--fg));
+}
+
+/* Uploaders API Section */
+details {
+    background-color: var(--bg0);
+    border-radius: var(--radius);
+    box-shadow: var(--clay-shadow);
+    margin-bottom: 24px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 2px solid white;
+}
+
+summary {
+    padding: 18px 24px;
+    cursor: pointer;
+    font-weight: 700;
+    outline: none;
+    background: rgba(255,255,255,0.5);
+}
+
+details[open] summary {
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.api-block {
+    background-color: #f8fafc;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.api-card {
+    background-color: white;
+    border-radius: 16px;
+    box-shadow: var(--clay-shadow-sm);
+    padding: 16px;
+    transition: transform 0.2s;
+    border: 2px solid white;
+}
+
+.api-card:hover {
+    transform: translateY(-4px) scale(1.02);
+}
+
+.codeblock, pre {
+    background: #1e293b !important;
+    border-radius: 12px;
+    padding: 14px !important;
+    font-family: 'JetBrains Mono', monospace;
+    color: #e2e8f0;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+}
+
+/* Tables */
+details th {
+    color: var(--primary);
+    border-bottom: 2px solid #e2e8f0;
+    padding: 12px;
+}
+
+details td {
+    padding: 12px;
+    border-bottom: 1px solid #f1f5f9;
+}
+

@@ -204,6 +204,8 @@ export const POST: RequestHandler = async ({ request, url }) => {
             { status: 413, headers: corsHeaders(request) },
         );
     }
+    const contentLength =
+        Number.isFinite(file.size) && file.size > 0 ? file.size : 0;
 
     const index = await loadIndex();
     const id = (() => {
@@ -272,6 +274,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
                             Key: keyObj,
                             Body: Readable.fromWeb(r2Stream as any) as any,
                             ContentType: file.type || "application/octet-stream",
+                            ContentLength: contentLength,
                         }),
                     ),
                 ]);
@@ -292,6 +295,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
                             Key: keyObj,
                             Body: Readable.fromWeb(r2Stream as any) as any,
                             ContentType: file.type || "application/octet-stream",
+                            ContentLength: contentLength,
                         }),
                     ),
                 ]);
@@ -403,6 +407,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
                             Key: keyObj,
                             Body: Readable.fromWeb(webStream2 as any) as any,
                             ContentType: file.type || "application/octet-stream",
+                            ContentLength: contentLength,
                         }),
                     );
                     checksum = providedChecksum.trim();
@@ -423,6 +428,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
                             Key: keyObj,
                             Body: Readable.fromWeb(uploadStream2 as any) as any,
                             ContentType: file.type || "application/octet-stream",
+                            ContentLength: contentLength,
                         }),
                     );
                     await Promise.all([
@@ -448,57 +454,112 @@ export const POST: RequestHandler = async ({ request, url }) => {
             const bucket = process.env.R2_BUCKET || "";
             const accessKeyId = process.env.R2_ACCESS_KEY_ID || "";
             const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY || "";
+            let usedBlobFallback = false;
             if (!endpoint || !bucket || !accessKeyId || !secretAccessKey) {
-                return json(
-                    { error: 500, message: "Missing R2 configuration env" },
-                    { status: 500, headers: corsHeaders(request) },
-                );
+                try {
+                    const token = process.env.BLOB_READ_WRITE_TOKEN || undefined;
+                    if (!token) {
+                        return json(
+                            { error: 500, message: "Missing R2 configuration env" },
+                            { status: 500, headers: corsHeaders(request) },
+                        );
+                    }
+                    const webStreamFallback: ReadableStream = (file.stream() as any);
+                    if (useClientChecksum) {
+                        const result = await put(`${id}${ext}`, webStreamFallback as any, {
+                            access: "public",
+                            addRandomSuffix: false,
+                            token,
+                        });
+                        checksum = providedChecksum.trim();
+                        filePath = result.url;
+                        blobPathname = (result as any).pathname || undefined;
+                        storage = "blob";
+                        usedBlobFallback = true;
+                    }
+                    if (!usedBlobFallback) {
+                        const [uploadStream, hashStream] = (webStreamFallback as any).tee
+                            ? (webStreamFallback as any).tee()
+                            : [webStreamFallback, webStreamFallback];
+                        const hasher = crypto.createHash("md5");
+                        const hasherTransform = new Transform({
+                            transform(chunk, _enc, cb) {
+                                hasher.update(chunk as Buffer);
+                                cb(null, chunk);
+                            },
+                        });
+                        const putPromise = put(`${id}${ext}`, uploadStream as any, {
+                            access: "public",
+                            addRandomSuffix: false,
+                            token,
+                        });
+                        await Promise.all([
+                            putPromise,
+                            pipeline(Readable.fromWeb(hashStream as any), hasherTransform),
+                        ]);
+                        checksum = hasher.digest("hex");
+                        const result = await putPromise;
+                        filePath = result.url;
+                        blobPathname = (result as any).pathname || undefined;
+                        storage = "blob";
+                        usedBlobFallback = true;
+                    }
+                } catch (errFallback) {
+                    return json(
+                        { error: 500, message: `Missing R2 configuration env and Blob fallback failed: ${errFallback}` },
+                        { status: 500, headers: corsHeaders(request) },
+                    );
+                }
             }
-            const s3 = new S3Client({
-                region: "auto",
-                endpoint,
-                credentials: { accessKeyId, secretAccessKey },
-            });
-            const webStream: ReadableStream = (file.stream() as any);
-            const keyObj = `${id}${ext}`;
-            if (useClientChecksum) {
-                await s3.send(
-                    new PutObjectCommand({
-                        Bucket: bucket,
-                        Key: keyObj,
-                        Body: Readable.fromWeb(webStream as any) as any,
-                        ContentType: file.type || "application/octet-stream",
-                    }),
-                );
-                checksum = providedChecksum.trim();
-            } else {
-                const [uploadStream, hashStream] = (webStream as any).tee
-                    ? (webStream as any).tee()
-                    : [webStream, webStream];
-                const hasher = crypto.createHash("md5");
-                const hasherTransform = new Transform({
-                    transform(chunk, _enc, cb) {
-                        hasher.update(chunk as Buffer);
-                        cb(null, chunk);
-                    },
+            if (!usedBlobFallback) {
+                const s3 = new S3Client({
+                    region: "auto",
+                    endpoint,
+                    credentials: { accessKeyId, secretAccessKey },
                 });
-                const r2Promise = s3.send(
-                    new PutObjectCommand({
-                        Bucket: bucket,
-                        Key: keyObj,
-                        Body: Readable.fromWeb(uploadStream as any) as any,
-                        ContentType: file.type || "application/octet-stream",
-                    }),
-                );
-                await Promise.all([
-                    r2Promise,
-                    pipeline(Readable.fromWeb(hashStream as any), hasherTransform),
-                ]);
-                checksum = hasher.digest("hex");
+                const webStream: ReadableStream = (file.stream() as any);
+                const keyObj = `${id}${ext}`;
+                if (useClientChecksum) {
+                    await s3.send(
+                        new PutObjectCommand({
+                            Bucket: bucket,
+                            Key: keyObj,
+                            Body: Readable.fromWeb(webStream as any) as any,
+                            ContentType: file.type || "application/octet-stream",
+                            ContentLength: contentLength,
+                        }),
+                    );
+                    checksum = providedChecksum.trim();
+                } else {
+                    const [uploadStream, hashStream] = (webStream as any).tee
+                        ? (webStream as any).tee()
+                        : [webStream, webStream];
+                    const hasher = crypto.createHash("md5");
+                    const hasherTransform = new Transform({
+                        transform(chunk, _enc, cb) {
+                            hasher.update(chunk as Buffer);
+                            cb(null, chunk);
+                        },
+                    });
+                    const r2Promise = s3.send(
+                        new PutObjectCommand({
+                            Bucket: bucket,
+                            Key: keyObj,
+                            Body: Readable.fromWeb(uploadStream as any) as any,
+                            ContentType: file.type || "application/octet-stream",
+                            ContentLength: contentLength,
+                        }),
+                    );
+                    await Promise.all([
+                        r2Promise,
+                        pipeline(Readable.fromWeb(hashStream as any), hasherTransform),
+                    ]);
+                    checksum = hasher.digest("hex");
+                }
+                filePath = `r2://${bucket}/${keyObj}`;
+                r2Bucket = bucket;
+                r2Key = keyObj;
             }
-            filePath = `r2://${bucket}/${keyObj}`;
-            r2Bucket = bucket;
-            r2Key = keyObj;
         } catch (err) {
             return json(
                 { error: 500, message: `R2 upload failed: ${err}` },

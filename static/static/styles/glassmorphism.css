@@ -58,7 +58,8 @@ body, main {
 }
 
 /* Glass Card - The Core Style */
-.wrapper, .settings, Dialog section, .glass-card {
+/* Glass Card - The Core Style */
+.wrapper {
     background: var(--glass-bg) !important;
     box-shadow: 
         0 8px 32px 0 rgba(0, 0, 0, 0.3),
@@ -128,47 +129,82 @@ input:focus {
 
 /* Buttons */
 button, .upload-label {
-    border-radius: 16px !important;
+    border-radius: 12px !important;
+    cursor: pointer;
 }
 
 .upload-label {
-    background: rgba(255, 255, 255, 0.2) !important;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%) !important;
     border: 1px solid rgba(255, 255, 255, 0.4) !important;
-    font-weight: 700;
-    letter-spacing: 1px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
     text-transform: uppercase;
-    font-size: 0.9rem;
-    padding: 14px 28px !important;
+    font-size: 0.85rem;
+    padding: 10px 24px !important;
+    color: white !important;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
 }
 
 .upload-label:hover {
-    background: rgba(255, 255, 255, 0.3) !important;
-    box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+    background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.2) 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
 }
 
-/* Uploaders Page specific */
-details {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-    border: 1px solid rgba(255, 255, 255, 0.3);
+.upload-label.secondary {
+    background: transparent !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: none;
 }
 
-.api-block, .api-card {
-    background: rgba(0, 0, 0, 0.25) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+.upload-label.secondary:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
 }
 
-.codeblock, pre {
-    background: #1e1e2e !important; /* Darker clean background for code */
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+/* Dialog & Modal Fixes */
+dialog {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); border-radius: 4px; }
+dialog::backdrop {
+    background: rgba(0, 0, 0, 0.6) !important;
+    backdrop-filter: blur(5px);
+}
+
+/* Reset inner section margin from Dialog.svelte */
+dialog section {
+    margin: 0 !important;
+    /* remove glass from generic section if inside dialog to prevent double glass */
+    background: transparent !important; 
+    box-shadow: none !important;
+    border: none !important;
+    backdrop-filter: none !important;
+}
+
+/* Apply Glass to the specific container */
+.preupload, .glass-card, .settings {
+    background: var(--glass-bg) !important;
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-radius: var(--glass-radius) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-top: 1px solid rgba(255,255,255,0.6) !important;
+    border-left: 1px solid rgba(255,255,255,0.6) !important;
+    color: rgb(var(--fg));
+    padding: 24px !important; /* Add padding here */
+}
 
 /* Pre-upload Modal fixes */
 .preupload {
     gap: 20px !important;
+    max-width: 500px !important; /* Limit width */
+    width: 90vw;
 }
 
 .preupload-list {
@@ -189,20 +225,46 @@ details {
 }
 
 .preupload-row {
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     align-items: center;
+    display: flex; /* Ensure flex */
+    gap: 15px;
 }
 
 .preupload-row:last-child {
     margin-bottom: 0;
 }
 
+.preupload-label {
+    white-space: nowrap;
+    min-width: 60px; /* Fixed width for labels */
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+}
+
 .preupload-input {
+    flex: 1; /* Take remaining space */
     width: 100%;
     background: rgba(255, 255, 255, 0.1) !important;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
     color: white !important;
     text-overflow: ellipsis;
+    padding: 8px 12px !important;
+}
+
+/* Toggle specific */
+.preupload-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-weight: 500;
+} 
+
+.preupload-toggle input {
+    accent-color: var(--secondary);
+    width: 16px;
+    height: 16px;
 }
 
 /* Fix text overflow in modal */

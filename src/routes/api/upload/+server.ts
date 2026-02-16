@@ -96,6 +96,16 @@ const checkToken = (request: Request, url: URL) => {
     return false;
 };
 
+const corsHeaders = (request: Request) => {
+    const origin = request.headers.get("origin") || "*";
+    return {
+        "access-control-allow-origin": origin,
+        "access-control-allow-methods": "POST, OPTIONS",
+        "access-control-allow-headers": "content-type, authorization, x-api-key",
+        "access-control-max-age": "86400",
+    };
+};
+
 const safeExt = (name: string) => {
     const ext = path.extname(name || "").slice(0, 16);
     if (!ext || ext === ".") return "";
@@ -151,7 +161,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
     if (!checkToken(request, url)) {
         return json(
             { error: 401, message: "Unauthorized" },
-            { status: 401 },
+            { status: 401, headers: corsHeaders(request) },
         );
     }
     const retryAt = checkRateLimit(request, 20, 60_000);
@@ -159,7 +169,10 @@ export const POST: RequestHandler = async ({ request, url }) => {
         const retrySeconds = Math.max(1, Math.ceil((retryAt - Date.now()) / 1000));
         return json(
             { error: 429, message: "Too many requests" },
-            { status: 429, headers: { "retry-after": String(retrySeconds) } },
+            {
+                status: 429,
+                headers: { "retry-after": String(retrySeconds), ...corsHeaders(request) },
+            },
         );
     }
     const form = await request.formData();
@@ -167,7 +180,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
     if (!(file instanceof File)) {
         return json(
             { error: 400, message: 'Missing multipart form field "file"' },
-            { status: 400 },
+            { status: 400, headers: corsHeaders(request) },
         );
     }
     const visibility = form.get("visibility");
@@ -179,13 +192,13 @@ export const POST: RequestHandler = async ({ request, url }) => {
     if (isPrivate && !password) {
         return json(
             { error: 400, message: "Password is required for private files" },
-            { status: 400 },
+            { status: 400, headers: corsHeaders(request) },
         );
     }
     if (Number.isFinite(maxBytes) && maxBytes > 0 && file.size > maxBytes) {
         return json(
             { error: 413, message: `File too large (max ${maxBytes} bytes)` },
-            { status: 413 },
+            { status: 413, headers: corsHeaders(request) },
         );
     }
 
@@ -244,7 +257,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
             if (!endpoint || !bucketR2 || !accessKeyId || !secretAccessKey) {
                 return json(
                     { error: 500, message: "Missing R2 configuration env" },
-                    { status: 500 },
+                    { status: 500, headers: corsHeaders(request) },
                 );
             }
             const s3 = new S3Client({
@@ -273,7 +286,10 @@ export const POST: RequestHandler = async ({ request, url }) => {
             r2Key = keyObj;
             storage = "r2";
         } catch (err) {
-            return json({ error: 500, message: `Dual upload failed: ${err}` }, { status: 500 });
+            return json(
+                { error: 500, message: `Dual upload failed: ${err}` },
+                { status: 500, headers: corsHeaders(request) },
+            );
         }
     } else if (storage === "mongodb") {
         try {
@@ -296,7 +312,10 @@ export const POST: RequestHandler = async ({ request, url }) => {
             gridfsId = String(uploadStream.id);
             filePath = `gridfs://${bucketName}/${id}${ext}`;
         } catch (err) {
-            return json({ error: 500, message: `MongoDB upload failed: ${err}` }, { status: 500 });
+            return json(
+                { error: 500, message: `MongoDB upload failed: ${err}` },
+                { status: 500, headers: corsHeaders(request) },
+            );
         }
     } else if (storage === "blob") {
         try {
@@ -322,7 +341,10 @@ export const POST: RequestHandler = async ({ request, url }) => {
             filePath = result.url;
             blobPathname = (result as any).pathname || undefined;
         } catch (err) {
-            return json({ error: 500, message: `Blob upload failed: ${err}` }, { status: 500 });
+            return json(
+                { error: 500, message: `Blob upload failed: ${err}` },
+                { status: 500, headers: corsHeaders(request) },
+            );
         }
     } else if (storage === "r2") {
         try {
@@ -333,7 +355,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
             if (!endpoint || !bucket || !accessKeyId || !secretAccessKey) {
                 return json(
                     { error: 500, message: "Missing R2 configuration env" },
-                    { status: 500 },
+                    { status: 500, headers: corsHeaders(request) },
                 );
             }
             const s3 = new S3Client({
@@ -367,7 +389,10 @@ export const POST: RequestHandler = async ({ request, url }) => {
             r2Bucket = bucket;
             r2Key = keyObj;
         } catch (err) {
-            return json({ error: 500, message: `R2 upload failed: ${err}` }, { status: 500 });
+            return json(
+                { error: 500, message: `R2 upload failed: ${err}` },
+                { status: 500, headers: corsHeaders(request) },
+            );
         }
     } else {
         await mkdir(filesDir, { recursive: true });
@@ -410,13 +435,23 @@ export const POST: RequestHandler = async ({ request, url }) => {
     await saveIndex(index);
 
 
-    return json({
-        id,
-        ext,
-        type: file.type || "application/octet-stream",
-        checksum,
-        key,
-        origin: url.origin,
-        private: isPrivate,
+    return json(
+        {
+            id,
+            ext,
+            type: file.type || "application/octet-stream",
+            checksum,
+            key,
+            origin: url.origin,
+            private: isPrivate,
+        },
+        { headers: corsHeaders(request) },
+    );
+};
+
+export const OPTIONS: RequestHandler = async ({ request }) => {
+    return new Response("ok", {
+        status: 200,
+        headers: corsHeaders(request),
     });
 };

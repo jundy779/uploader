@@ -222,13 +222,10 @@
 
         const formData = new FormData();
 
+        let uploadFile = file;
         if ($userSettings.stripExif && file.type.startsWith("image/")) {
             try {
-                formData.append(
-                    "file",
-                    await removeExif(file),
-                    item.name || file.name,
-                );
+                uploadFile = await removeExif(file);
             } catch (err) {
                 item.status = "error";
                 refreshUploads();
@@ -236,13 +233,27 @@
                 notifyError(`Error reading "${file.name}":\n${err}`);
                 return;
             }
-        } else {
-            formData.append("file", file, item.name || file.name);
         }
+        formData.append("file", uploadFile, item.name || uploadFile.name);
         formData.append("visibility", item.isPrivate ? "private" : "public");
         if (item.isPrivate && item.password) {
             formData.append("password", item.password);
         }
+
+        const computeChecksum = async (/** @type {Blob} */ blob) => {
+            const buf = await blob.arrayBuffer();
+            const digest = await crypto.subtle.digest("SHA-256", buf);
+            const hex = Array.from(new Uint8Array(digest))
+                .map((b) => b.toString(16).padStart(2, "0"))
+                .join("");
+            return `sha256:${hex}`;
+        };
+        try {
+            if (uploadFile.size <= 7 * 1024 * 1024) {
+                const cs = await computeChecksum(uploadFile);
+                formData.append("checksum", cs);
+            }
+        } catch (_) {}
 
         const xhr = new XMLHttpRequest();
 
@@ -820,12 +831,25 @@
 
         .upload-name {
             max-width: 100%;
+            white-space: normal;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            line-height: 1.2;
         }
     }
 
     .upload-meta {
         opacity: 0.75;
         white-space: nowrap;
+    }
+
+    @media screen and (max-width: 640px) {
+        .upload-meta {
+            white-space: normal;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            line-height: 1.2;
+        }
     }
 
     progress {

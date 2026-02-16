@@ -185,6 +185,9 @@ export const POST: RequestHandler = async ({ request, url }) => {
     }
     const visibility = form.get("visibility");
     const rawPassword = form.get("password");
+    const providedChecksum =
+        typeof form.get("checksum") === "string" ? String(form.get("checksum")) : "";
+    const useClientChecksum = Boolean(providedChecksum && providedChecksum.trim().length > 0);
     const isPrivate =
         visibility === "private" || form.get("private") === "true";
     const password =
@@ -236,13 +239,6 @@ export const POST: RequestHandler = async ({ request, url }) => {
             const [mongoStream, r2Stream] = teeFn ? teeFn.call(webStream) : [webStream, webStream];
 
             const { bucket, bucketName } = await getMongo();
-            const hasher = crypto.createHash("md5");
-            const hasherTransform = new Transform({
-                transform(chunk, _enc, cb) {
-                    hasher.update(chunk as Buffer);
-                    cb(null, chunk);
-                },
-            });
             const uploadMongo = bucket.openUploadStream(`${id}${ext}`, {
                 metadata: {
                     originalName: file.name || id,
@@ -267,19 +263,40 @@ export const POST: RequestHandler = async ({ request, url }) => {
             });
             const keyObj = `${id}${ext}`;
 
-            await Promise.all([
-                pipeline(Readable.fromWeb(mongoStream as any), hasherTransform, uploadMongo),
-                s3.send(
-                    new PutObjectCommand({
-                        Bucket: bucketR2,
-                        Key: keyObj,
-                        Body: Readable.fromWeb(r2Stream as any) as any,
-                        ContentType: file.type || "application/octet-stream",
-                    }),
-                ),
-            ]);
-
-            checksum = hasher.digest("hex");
+            if (useClientChecksum) {
+                await Promise.all([
+                    pipeline(Readable.fromWeb(mongoStream as any), uploadMongo),
+                    s3.send(
+                        new PutObjectCommand({
+                            Bucket: bucketR2,
+                            Key: keyObj,
+                            Body: Readable.fromWeb(r2Stream as any) as any,
+                            ContentType: file.type || "application/octet-stream",
+                        }),
+                    ),
+                ]);
+                checksum = providedChecksum.trim();
+            } else {
+                const hasher = crypto.createHash("md5");
+                const hasherTransform = new Transform({
+                    transform(chunk, _enc, cb) {
+                        hasher.update(chunk as Buffer);
+                        cb(null, chunk);
+                    },
+                });
+                await Promise.all([
+                    pipeline(Readable.fromWeb(mongoStream as any), hasherTransform, uploadMongo),
+                    s3.send(
+                        new PutObjectCommand({
+                            Bucket: bucketR2,
+                            Key: keyObj,
+                            Body: Readable.fromWeb(r2Stream as any) as any,
+                            ContentType: file.type || "application/octet-stream",
+                        }),
+                    ),
+                ]);
+                checksum = hasher.digest("hex");
+            }
             gridfsId = String(uploadMongo.id);
             filePath = `r2://${bucketR2}/${keyObj}`;
             r2Bucket = bucketR2;
@@ -294,21 +311,26 @@ export const POST: RequestHandler = async ({ request, url }) => {
     } else if (storage === "mongodb") {
         try {
             const { bucket, bucketName } = await getMongo();
-            const hasher = crypto.createHash("md5");
-            const hasherTransform = new Transform({
-                transform(chunk, _enc, cb) {
-                    hasher.update(chunk as Buffer);
-                    cb(null, chunk);
-                },
-            });
             const uploadStream = bucket.openUploadStream(`${id}${ext}`, {
                 metadata: {
                     originalName: file.name || id,
                     contentType: file.type || "application/octet-stream",
                 },
             });
-            await pipeline(Readable.fromWeb(file.stream() as any), hasherTransform, uploadStream);
-            checksum = hasher.digest("hex");
+            if (useClientChecksum) {
+                await pipeline(Readable.fromWeb(file.stream() as any), uploadStream);
+                checksum = providedChecksum.trim();
+            } else {
+                const hasher = crypto.createHash("md5");
+                const hasherTransform = new Transform({
+                    transform(chunk, _enc, cb) {
+                        hasher.update(chunk as Buffer);
+                        cb(null, chunk);
+                    },
+                });
+                await pipeline(Readable.fromWeb(file.stream() as any), hasherTransform, uploadStream);
+                checksum = hasher.digest("hex");
+            }
             gridfsId = String(uploadStream.id);
             filePath = `gridfs://${bucketName}/${id}${ext}`;
         } catch (err) {
@@ -320,30 +342,41 @@ export const POST: RequestHandler = async ({ request, url }) => {
     } else if (storage === "blob") {
         try {
             const webStream: ReadableStream = (file.stream() as any);
-            const [uploadStream, hashStream] = (webStream as any).tee
-                ? (webStream as any).tee()
-                : [webStream, webStream];
-            const hasher = crypto.createHash("md5");
-            const hasherTransform = new Transform({
-                transform(chunk, _enc, cb) {
-                    hasher.update(chunk as Buffer);
-                    cb(null, chunk);
-                },
-            });
             const token = process.env.BLOB_READ_WRITE_TOKEN || undefined;
-            const putPromise = put(`${id}${ext}`, uploadStream as any, {
-                access: "public",
-                addRandomSuffix: false,
-                token,
-            });
-            await Promise.all([
-                putPromise,
-                pipeline(Readable.fromWeb(hashStream as any), hasherTransform),
-            ]);
-            checksum = hasher.digest("hex");
-            const result = await putPromise;
-            filePath = result.url;
-            blobPathname = (result as any).pathname || undefined;
+            if (useClientChecksum) {
+                const result = await put(`${id}${ext}`, webStream as any, {
+                    access: "public",
+                    addRandomSuffix: false,
+                    token,
+                });
+                checksum = providedChecksum.trim();
+                filePath = result.url;
+                blobPathname = (result as any).pathname || undefined;
+            } else {
+                const [uploadStream, hashStream] = (webStream as any).tee
+                    ? (webStream as any).tee()
+                    : [webStream, webStream];
+                const hasher = crypto.createHash("md5");
+                const hasherTransform = new Transform({
+                    transform(chunk, _enc, cb) {
+                        hasher.update(chunk as Buffer);
+                        cb(null, chunk);
+                    },
+                });
+                const putPromise = put(`${id}${ext}`, uploadStream as any, {
+                    access: "public",
+                    addRandomSuffix: false,
+                    token,
+                });
+                await Promise.all([
+                    putPromise,
+                    pipeline(Readable.fromWeb(hashStream as any), hasherTransform),
+                ]);
+                checksum = hasher.digest("hex");
+                const result = await putPromise;
+                filePath = result.url;
+                blobPathname = (result as any).pathname || undefined;
+            }
         } catch (err) {
             try {
                 const endpoint = process.env.R2_ENDPOINT || "";
@@ -362,30 +395,42 @@ export const POST: RequestHandler = async ({ request, url }) => {
                     credentials: { accessKeyId, secretAccessKey },
                 });
                 const webStream2: ReadableStream = (file.stream() as any);
-                const [uploadStream2, hashStream2] = (webStream2 as any).tee
-                    ? (webStream2 as any).tee()
-                    : [webStream2, webStream2];
-                const hasher2 = crypto.createHash("md5");
-                const hasherTransform2 = new Transform({
-                    transform(chunk, _enc, cb) {
-                        hasher2.update(chunk as Buffer);
-                        cb(null, chunk);
-                    },
-                });
                 const keyObj = `${id}${ext}`;
-                const r2Promise = s3.send(
-                    new PutObjectCommand({
-                        Bucket: bucket,
-                        Key: keyObj,
-                        Body: Readable.fromWeb(uploadStream2 as any) as any,
-                        ContentType: file.type || "application/octet-stream",
-                    }),
-                );
-                await Promise.all([
-                    r2Promise,
-                    pipeline(Readable.fromWeb(hashStream2 as any), hasherTransform2),
-                ]);
-                checksum = hasher2.digest("hex");
+                if (useClientChecksum) {
+                    await s3.send(
+                        new PutObjectCommand({
+                            Bucket: bucket,
+                            Key: keyObj,
+                            Body: Readable.fromWeb(webStream2 as any) as any,
+                            ContentType: file.type || "application/octet-stream",
+                        }),
+                    );
+                    checksum = providedChecksum.trim();
+                } else {
+                    const [uploadStream2, hashStream2] = (webStream2 as any).tee
+                        ? (webStream2 as any).tee()
+                        : [webStream2, webStream2];
+                    const hasher2 = crypto.createHash("md5");
+                    const hasherTransform2 = new Transform({
+                        transform(chunk, _enc, cb) {
+                            hasher2.update(chunk as Buffer);
+                            cb(null, chunk);
+                        },
+                    });
+                    const r2Promise = s3.send(
+                        new PutObjectCommand({
+                            Bucket: bucket,
+                            Key: keyObj,
+                            Body: Readable.fromWeb(uploadStream2 as any) as any,
+                            ContentType: file.type || "application/octet-stream",
+                        }),
+                    );
+                    await Promise.all([
+                        r2Promise,
+                        pipeline(Readable.fromWeb(hashStream2 as any), hasherTransform2),
+                    ]);
+                    checksum = hasher2.digest("hex");
+                }
                 filePath = `r2://${bucket}/${keyObj}`;
                 r2Bucket = bucket;
                 r2Key = keyObj;
@@ -415,30 +460,42 @@ export const POST: RequestHandler = async ({ request, url }) => {
                 credentials: { accessKeyId, secretAccessKey },
             });
             const webStream: ReadableStream = (file.stream() as any);
-            const [uploadStream, hashStream] = (webStream as any).tee
-                ? (webStream as any).tee()
-                : [webStream, webStream];
-            const hasher = crypto.createHash("md5");
-            const hasherTransform = new Transform({
-                transform(chunk, _enc, cb) {
-                    hasher.update(chunk as Buffer);
-                    cb(null, chunk);
-                },
-            });
             const keyObj = `${id}${ext}`;
-            const r2Promise = s3.send(
-                new PutObjectCommand({
-                    Bucket: bucket,
-                    Key: keyObj,
-                    Body: Readable.fromWeb(uploadStream as any) as any,
-                    ContentType: file.type || "application/octet-stream",
-                }),
-            );
-            await Promise.all([
-                r2Promise,
-                pipeline(Readable.fromWeb(hashStream as any), hasherTransform),
-            ]);
-            checksum = hasher.digest("hex");
+            if (useClientChecksum) {
+                await s3.send(
+                    new PutObjectCommand({
+                        Bucket: bucket,
+                        Key: keyObj,
+                        Body: Readable.fromWeb(webStream as any) as any,
+                        ContentType: file.type || "application/octet-stream",
+                    }),
+                );
+                checksum = providedChecksum.trim();
+            } else {
+                const [uploadStream, hashStream] = (webStream as any).tee
+                    ? (webStream as any).tee()
+                    : [webStream, webStream];
+                const hasher = crypto.createHash("md5");
+                const hasherTransform = new Transform({
+                    transform(chunk, _enc, cb) {
+                        hasher.update(chunk as Buffer);
+                        cb(null, chunk);
+                    },
+                });
+                const r2Promise = s3.send(
+                    new PutObjectCommand({
+                        Bucket: bucket,
+                        Key: keyObj,
+                        Body: Readable.fromWeb(uploadStream as any) as any,
+                        ContentType: file.type || "application/octet-stream",
+                    }),
+                );
+                await Promise.all([
+                    r2Promise,
+                    pipeline(Readable.fromWeb(hashStream as any), hasherTransform),
+                ]);
+                checksum = hasher.digest("hex");
+            }
             filePath = `r2://${bucket}/${keyObj}`;
             r2Bucket = bucket;
             r2Key = keyObj;
@@ -451,19 +508,24 @@ export const POST: RequestHandler = async ({ request, url }) => {
     } else {
         await mkdir(filesDir, { recursive: true });
         filePath = path.join(filesDir, `${id}${ext}`);
-        const hasher = crypto.createHash("md5");
-        const hasherTransform = new Transform({
-            transform(chunk, _enc, cb) {
-                hasher.update(chunk as Buffer);
-                cb(null, chunk);
-            },
-        });
-        await pipeline(
-            Readable.fromWeb(file.stream() as any),
-            hasherTransform,
-            createWriteStream(filePath),
-        );
-        checksum = hasher.digest("hex");
+        if (useClientChecksum) {
+            await pipeline(Readable.fromWeb(file.stream() as any), createWriteStream(filePath));
+            checksum = providedChecksum.trim();
+        } else {
+            const hasher = crypto.createHash("md5");
+            const hasherTransform = new Transform({
+                transform(chunk, _enc, cb) {
+                    hasher.update(chunk as Buffer);
+                    cb(null, chunk);
+                },
+            });
+            await pipeline(
+                Readable.fromWeb(file.stream() as any),
+                hasherTransform,
+                createWriteStream(filePath),
+            );
+            checksum = hasher.digest("hex");
+        }
     }
     const key = crypto.randomBytes(24).toString("hex");
     const createdAt = Date.now();

@@ -11,14 +11,16 @@ import { put } from "@vercel/blob";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getMongo, saveFileMetadata, getFileMetadata } from "$lib/db";
 
-const isVercel = Boolean(process.env.VERCEL || process.env.VERCEL_ENV);
+import { env } from "$env/dynamic/private";
+
+const isVercel = Boolean(env.VERCEL || env.VERCEL_ENV);
 const dataDir = path.resolve(
-    process.env.UPLOADER_DATA_DIR || (isVercel ? "/tmp/uploader" : ".data/uploader"),
+    env.UPLOADER_DATA_DIR || (isVercel ? "/tmp/uploader" : ".data/uploader"),
 );
 const filesDir = path.join(dataDir, "files");
-const maxBytes = Number(process.env.UPLOADER_MAX_BYTES || 104_857_600);
+const maxBytes = Number(env.UPLOADER_MAX_BYTES || 104_857_600);
 const rateLimitState = new Map<string, { count: number; resetAt: number }>();
-const dualThreshold = Number(process.env.UPLOADER_DUAL_THRESHOLD_BYTES || 7 * 1024 * 1024);
+const dualThreshold = Number(env.UPLOADER_DUAL_THRESHOLD_BYTES || 7 * 1024 * 1024);
 
 const getClientIp = (request: Request) => {
     const forwarded = request.headers.get("x-forwarded-for");
@@ -46,7 +48,7 @@ const checkRateLimit = (request: Request, limit: number, windowMs: number) => {
 };
 
 const checkToken = (request: Request, url: URL) => {
-    const token = process.env.UPLOADER_API_TOKEN;
+    const token = env.UPLOADER_API_TOKEN;
     if (!token) return true;
     const bearer = request.headers.get("authorization");
     const apiKey = request.headers.get("x-api-key");
@@ -146,7 +148,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
     let storage =
         (typeof form.get("storage") === "string" ? String(form.get("storage")) : undefined) ||
         url.searchParams.get("storage") ||
-        process.env.UPLOADER_STORAGE_DEFAULT ||
+        env.UPLOADER_STORAGE_DEFAULT ||
         "fs";
 
     let filePath = "";
@@ -180,10 +182,10 @@ export const POST: RequestHandler = async ({ request, url }) => {
                 },
             });
 
-            const endpoint = process.env.R2_ENDPOINT || "";
-            const bucketR2 = process.env.R2_BUCKET || "";
-            const accessKeyId = process.env.R2_ACCESS_KEY_ID || "";
-            const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY || "";
+            const endpoint = env.R2_ENDPOINT || "";
+            const bucketR2 = env.R2_BUCKET || "";
+            const accessKeyId = env.R2_ACCESS_KEY_ID || "";
+            const secretAccessKey = env.R2_SECRET_ACCESS_KEY || "";
             if (!endpoint || !bucketR2 || !accessKeyId || !secretAccessKey) {
                 return json(
                     { error: 500, message: "Missing R2 configuration env" },
@@ -254,7 +256,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
                     cb(null, chunk);
                 },
             });
-            const token = process.env.BLOB_READ_WRITE_TOKEN || undefined;
+            const token = env.BLOB_READ_WRITE_TOKEN || undefined;
             const result = await put(`${id}${ext}`, uploadStream as any, {
                 access: "public",
                 addRandomSuffix: false,
@@ -269,10 +271,10 @@ export const POST: RequestHandler = async ({ request, url }) => {
         }
     } else if (storage === "r2") {
         try {
-            const endpoint = process.env.R2_ENDPOINT || "";
-            const bucket = process.env.R2_BUCKET || "";
-            const accessKeyId = process.env.R2_ACCESS_KEY_ID || "";
-            const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY || "";
+            const endpoint = env.R2_ENDPOINT || "";
+            const bucket = env.R2_BUCKET || "";
+            const accessKeyId = env.R2_ACCESS_KEY_ID || "";
+            const secretAccessKey = env.R2_SECRET_ACCESS_KEY || "";
             if (!endpoint || !bucket || !accessKeyId || !secretAccessKey) {
                 return json(
                     { error: 500, message: "Missing R2 configuration env" },

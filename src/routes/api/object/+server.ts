@@ -2,6 +2,7 @@ import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import path from "node:path";
 import { getFileMetadata } from "$lib/db";
+import { env } from "$env/dynamic/private";
 
 const rateLimitState = new Map<string, { count: number; resetAt: number }>();
 
@@ -30,7 +31,7 @@ const checkRateLimit = (request: Request, limit: number, windowMs: number) => {
 };
 
 const checkToken = (request: Request, url: URL) => {
-    const token = process.env.UPLOADER_API_TOKEN;
+    const token = env.UPLOADER_API_TOKEN;
     if (!token) return true;
     const bearer = request.headers.get("authorization");
     const apiKey = request.headers.get("x-api-key");

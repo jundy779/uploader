@@ -8,9 +8,11 @@ import { del } from "@vercel/blob";
 import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getMongo, getFileMetadata, deleteFileMetadata } from "$lib/db";
 
-const isVercel = Boolean(process.env.VERCEL || process.env.VERCEL_ENV);
+import { env } from "$env/dynamic/private";
+
+const isVercel = Boolean(env.VERCEL || env.VERCEL_ENV);
 const dataDir = path.resolve(
-    process.env.UPLOADER_DATA_DIR || (isVercel ? "/tmp/uploader" : ".data/uploader"),
+    env.UPLOADER_DATA_DIR || (isVercel ? "/tmp/uploader" : ".data/uploader"),
 );
 const rateLimitState = new Map<string, { count: number; resetAt: number }>();
 
@@ -39,7 +41,7 @@ const checkRateLimit = (request: Request, limit: number, windowMs: number) => {
 };
 
 const checkToken = (request: Request, url: URL) => {
-    const token = process.env.UPLOADER_API_TOKEN;
+    const token = env.UPLOADER_API_TOKEN;
     if (!token) return true;
     const bearer = request.headers.get("authorization");
     const apiKey = request.headers.get("x-api-key");
@@ -74,13 +76,13 @@ const handleDelete = async (url: URL) => {
             try { await bucket.delete(new ObjectId(meta.gridfsId)); } catch {}
         }
         if (meta.blobPathname) {
-            const token = process.env.BLOB_READ_WRITE_TOKEN || undefined;
+            const token = env.BLOB_READ_WRITE_TOKEN || undefined;
             try { await del(meta.blobPathname, { token }); } catch {}
         }
         if (meta.r2Bucket && meta.r2Key) {
-            const endpoint = process.env.R2_ENDPOINT || "";
-            const accessKeyId = process.env.R2_ACCESS_KEY_ID || "";
-            const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY || "";
+            const endpoint = env.R2_ENDPOINT || "";
+            const accessKeyId = env.R2_ACCESS_KEY_ID || "";
+            const secretAccessKey = env.R2_SECRET_ACCESS_KEY || "";
             if (endpoint && accessKeyId && secretAccessKey) {
                 const s3 = new S3Client({
                     region: "auto",

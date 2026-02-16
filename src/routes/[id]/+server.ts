@@ -5,6 +5,7 @@ import crypto from "node:crypto";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getMongo, getFileMetadata } from "$lib/db";
 import { ObjectId } from "mongodb";
+import { env } from "$env/dynamic/private";
 
 export const GET: RequestHandler = async ({ params, url, request }) => {
     const id = (params.id || "").split(".")[0];
@@ -41,9 +42,9 @@ export const GET: RequestHandler = async ({ params, url, request }) => {
             },
         });
     } else if (meta.storage === "r2" && meta.r2Bucket && meta.r2Key) {
-        const endpoint = process.env.R2_ENDPOINT || "";
-        const accessKeyId = process.env.R2_ACCESS_KEY_ID || "";
-        const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY || "";
+        const endpoint = env.R2_ENDPOINT || "";
+        const accessKeyId = env.R2_ACCESS_KEY_ID || "";
+        const secretAccessKey = env.R2_SECRET_ACCESS_KEY || "";
         if (!endpoint || !accessKeyId || !secretAccessKey) {
             return new Response("Server misconfigured", { status: 500 });
         }

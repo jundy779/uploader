@@ -331,13 +331,17 @@ export const POST: RequestHandler = async ({ request, url }) => {
                 },
             });
             const token = process.env.BLOB_READ_WRITE_TOKEN || undefined;
-            const result = await put(`${id}${ext}`, uploadStream as any, {
+            const putPromise = put(`${id}${ext}`, uploadStream as any, {
                 access: "public",
                 addRandomSuffix: false,
                 token,
             });
-            await pipeline(Readable.fromWeb(hashStream as any), hasherTransform);
+            await Promise.all([
+                putPromise,
+                pipeline(Readable.fromWeb(hashStream as any), hasherTransform),
+            ]);
             checksum = hasher.digest("hex");
+            const result = await putPromise;
             filePath = result.url;
             blobPathname = (result as any).pathname || undefined;
         } catch (err) {
@@ -369,7 +373,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
                     },
                 });
                 const keyObj = `${id}${ext}`;
-                await s3.send(
+                const r2Promise = s3.send(
                     new PutObjectCommand({
                         Bucket: bucket,
                         Key: keyObj,
@@ -377,7 +381,10 @@ export const POST: RequestHandler = async ({ request, url }) => {
                         ContentType: file.type || "application/octet-stream",
                     }),
                 );
-                await pipeline(Readable.fromWeb(hashStream2 as any), hasherTransform2);
+                await Promise.all([
+                    r2Promise,
+                    pipeline(Readable.fromWeb(hashStream2 as any), hasherTransform2),
+                ]);
                 checksum = hasher2.digest("hex");
                 filePath = `r2://${bucket}/${keyObj}`;
                 r2Bucket = bucket;
@@ -419,7 +426,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
                 },
             });
             const keyObj = `${id}${ext}`;
-            await s3.send(
+            const r2Promise = s3.send(
                 new PutObjectCommand({
                     Bucket: bucket,
                     Key: keyObj,
@@ -427,7 +434,10 @@ export const POST: RequestHandler = async ({ request, url }) => {
                     ContentType: file.type || "application/octet-stream",
                 }),
             );
-            await pipeline(Readable.fromWeb(hashStream as any), hasherTransform);
+            await Promise.all([
+                r2Promise,
+                pipeline(Readable.fromWeb(hashStream as any), hasherTransform),
+            ]);
             checksum = hasher.digest("hex");
             filePath = `r2://${bucket}/${keyObj}`;
             r2Bucket = bucket;
@@ -441,8 +451,19 @@ export const POST: RequestHandler = async ({ request, url }) => {
     } else {
         await mkdir(filesDir, { recursive: true });
         filePath = path.join(filesDir, `${id}${ext}`);
-        await pipeline(Readable.fromWeb(file.stream() as any), createWriteStream(filePath));
-        checksum = await md5File(filePath);
+        const hasher = crypto.createHash("md5");
+        const hasherTransform = new Transform({
+            transform(chunk, _enc, cb) {
+                hasher.update(chunk as Buffer);
+                cb(null, chunk);
+            },
+        });
+        await pipeline(
+            Readable.fromWeb(file.stream() as any),
+            hasherTransform,
+            createWriteStream(filePath),
+        );
+        checksum = hasher.digest("hex");
     }
     const key = crypto.randomBytes(24).toString("hex");
     const createdAt = Date.now();

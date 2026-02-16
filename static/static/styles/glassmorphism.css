@@ -80,6 +80,10 @@ nav {
     margin-bottom: 30px;
 }
 
+hr {
+    display: none !important;
+}
+
 .support-btn {
     background: linear-gradient(90deg, #ff8a00, #e52e71) !important; /* Instagram-ish gradient */
     border: none !important;

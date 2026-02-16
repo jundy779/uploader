@@ -1,158 +1,181 @@
-/* Glassmorphism Theme */
+/* Vibrant Glassmorphism Theme (Apple Style) */
 
 :root {
-  /* Color Palette - Vibrant & Modern */
-  --primary: 255 107 107; /* Coral Red */
-  --secondary: 78 205 196; /* Turqoise */
-  --accent: 196 77 255; /* Purple */
+    /* Color Palette */
+    --primary: 255 107 107;      /* Coral */
+    --secondary: 78 205 196;     /* Turqoise */
+    --accent: 147 51 234;        /* Purple */
+    
+    /* Background Mesh Gradient */
+    --bg-gradient: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                   radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                   radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%), 
+                   radial-gradient(at 0% 50%, hsla(339,49%,30%,1) 0, transparent 50%), 
+                   radial-gradient(at 100% 50%, hsla(339,49%,30%,1) 0, transparent 50%), 
+                   radial-gradient(at 0% 100%, hsla(339,49%,30%,1) 0, transparent 50%), 
+                   radial-gradient(at 100% 100%, hsla(225,39%,30%,1) 0, transparent 50%);
+                   
+    /* Text */
+    --fg: 255 255 255;
+    --fg2: 226 232 240;
+    
+    /* Glass Effect Variables */
+    --glass-bg: rgba(255, 255, 255, 0.08); /* More transparent */
+    --glass-border: rgba(255, 255, 255, 0.3); /* Brighter border for 3D effect */
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.25);
+    --glass-blur: blur(16px);
+    --glass-radius: 24px; /* Large radius */
 
-  /* Backgrounds */
-  --bg-color: #0f172a; /* Deep Blue/Gray Background */
-  --bg-gradient: linear-gradient(
-    135deg,
-    #667eea 0%,
-    #764ba2 100%
-  ); /* Example Gradient */
-
-  /* Text */
-  --fg: 255 255 255; /* White Text */
-  --fg2: 241 245 249; /* Off-white Text */
-
-  /* Glass Effect Variables */
-  --glass-bg: rgba(255, 255, 255, 0.1);
-  --glass-border: rgba(255, 255, 255, 0.2);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  --glass-blur: blur(10px);
-
-  /* Mapped Variables for App Compatibility */
-  --bg: 15 23 42; /* Map to dark bg for fallback */
-  --bg0: 30 41 59; /* Slightly lighter */
-  --bg2: 51 65 85; /* Even lighter */
-  --bg_h: 255 255 255; /* For hover specific calculations if needed, but we override usually */
-
-  --outl1: 255 255 255; /* Borders */
-  --outl2: 255 255 255;
+    /* Mapped Variables */
+    --bg: 15 23 42;
+    --bg0: 30 41 59;
+    --bg2: 51 65 85;
+    --bg_h: 255 255 255;
+    
+    --outl1: 255 255 255;
+    --outl2: 255 255 255;
 }
 
-body,
-main {
-  background: var(--bg-gradient) !important;
-  background-attachment: fixed !important;
-  color: rgb(var(--fg));
-  min-height: 100vh;
+body, main {
+    background-color: #0f172a;
+    background-image: var(--bg-gradient) !important;
+    background-attachment: fixed !important;
+    background-size: 200% 200%;
+    animation: gradient 15s ease infinite;
+    color: rgb(var(--fg));
+    min-height: 100vh;
 }
 
-/* Glass Card Container */
-.wrapper,
-.settings,
-Dialog section,
-.glass-card {
-  background: var(--glass-bg) !important;
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border) !important;
-  border-radius: 16px !important;
-  box-shadow: var(--glass-shadow);
-  color: rgb(var(--fg));
+@keyframes gradient {
+	0% {
+		background-position: 0% 50%;
+	}
+	50% {
+		background-position: 100% 50%;
+	}
+	100% {
+		background-position: 0% 50%;
+	}
 }
 
-/* Nav & Header */
+/* Glass Card - The Core Style */
+.wrapper, .settings, Dialog section, .glass-card {
+    background: var(--glass-bg) !important;
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-radius: var(--glass-radius) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-top: 1px solid rgba(255,255,255,0.5) !important; /* Top highlight for depth */
+    border-left: 1px solid rgba(255,255,255,0.5) !important; /* Left highlight */
+    color: rgb(var(--fg));
+}
+
+/* Specific component tweaks */
 nav {
-  border-bottom: 1px solid var(--glass-border);
-  padding-bottom: 10px;
-  margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 15px;
+    margin-bottom: 25px;
 }
 
 .support-btn {
-  background: rgba(255, 255, 255, 0.2) !important;
-  border: 1px solid rgba(255, 255, 255, 0.3) !important;
-  color: white !important;
-  backdrop-filter: blur(5px);
-  transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 12px !important;
+    backdrop-filter: blur(4px);
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .support-btn:hover {
-  background: rgba(255, 255, 255, 0.3) !important;
-  transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.2) !important;
+    transform: scale(1.05);
 }
 
 /* Settings Area */
 .settings {
-  background: rgba(0, 0, 0, 0.2) !important; /* Slightly darker for contrast */
+    background: rgba(0, 0, 0, 0.2) !important;
+    border: none !important;
 }
 
 /* File List Items */
-.file,
-.upload-item {
-  background: rgba(255, 255, 255, 0.05) !important;
-  backdrop-filter: blur(5px);
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 12px !important;
-  margin-bottom: 12px !important;
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+.file, .upload-item {
+    background: rgba(255, 255, 255, 0.05) !important;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 16px !important;
+    margin-bottom: 16px !important;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    transition: transform 0.3s, background 0.3s;
 }
 
-.file:hover,
-.upload-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
-  background: rgba(255, 255, 255, 0.1) !important;
+.file:hover, .upload-item:hover {
+    transform: translateY(-4px) scale(1.01);
+    background: rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
 }
 
-/* Inputs & Buttons */
-input[type="text"],
-input[type="password"],
-textarea,
-select {
-  background: rgba(0, 0, 0, 0.2) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  color: white !important;
-  border-radius: 8px !important;
-  padding: 8px 12px !important;
+/* Inputs */
+input[type="text"], input[type="password"], textarea, select {
+    background: rgba(0, 0, 0, 0.25) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+    border-radius: 12px !important;
+    padding: 10px 14px !important;
+    transition: all 0.3s;
 }
 
-button {
-  backdrop-filter: blur(4px);
-  border-radius: 8px !important;
-  transition: all 0.2s ease;
+input:focus {
+    background: rgba(0, 0, 0, 0.4) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1);
+}
+
+/* Buttons */
+button, .upload-label {
+    backdrop-filter: blur(8px);
+    border-radius: 12px !important;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); 
+    /* Bouncy animation */
 }
 
 .upload-label {
-  background: rgba(255, 255, 255, 0.15) !important;
-  border: 1px solid rgba(255, 255, 255, 0.3) !important;
-  color: white !important;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: white !important;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    padding: 12px 24px !important;
+    font-weight: 600;
 }
 
 .upload-label:hover {
-  background: rgba(255, 255, 255, 0.25) !important;
-  transform: scale(1.05);
+    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%) !important;
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.25);
+    border-color: rgba(255, 255, 255, 0.6) !important;
 }
 
-/* Text Highlights */
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent; 
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2); 
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4); 
+}
+
+/* Headers */
+h1, h2, h3 {
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
 .name.pride {
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-}
-
-a {
-  color: rgb(var(--secondary));
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-a:hover {
-  color: rgb(var(--primary));
-  text-shadow: 0 0 8px rgba(255, 107, 107, 0.5);
-}
-
-/* Drop Zone */
-.drop-zone {
-  background: rgba(255, 255, 255, 0.1) url("/static/upload.svg") no-repeat
-    center !important;
-  background-size: 30% !important;
-  backdrop-filter: blur(20px);
+    /* Make the title pop more */
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
 }

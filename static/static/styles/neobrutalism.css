@@ -150,13 +150,14 @@ nav a:hover {
 
 /* Settings Width Fix */
 .settings {
-    width: 100%;
-    max-width: 800px;
-    margin: 0 auto;
+    width: 100% !important; /* Force full width to override svelte style */
+    max-width: none !important;
+    margin: 0 0 20px 0 !important; /* Spacing bottom */
 }
 
 .settings summary {
     padding: 15px;
+    width: 100%; /* Check this */
 }
 
 .settings[open] {

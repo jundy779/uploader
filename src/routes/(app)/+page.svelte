@@ -224,19 +224,11 @@
 
         if ($userSettings.stripExif && file.type.startsWith("image/")) {
             try {
-                const promise = removeExif(file);
-                promise
-                    .then((cleaned) => {
-                        formData.append("file", cleaned, item.name || file.name);
-                        xhr.send(formData);
-                    })
-                    .catch((err) => {
-                        item.status = "error";
-                        refreshUploads();
-                        updateOverallProgress();
-                        notifyError(`Error reading "${file.name}":\n${err}`);
-                    });
-                return;
+                formData.append(
+                    "file",
+                    await removeExif(file),
+                    item.name || file.name,
+                );
             } catch (err) {
                 item.status = "error";
                 refreshUploads();
@@ -378,9 +370,7 @@
             updateOverallProgress();
         });
 
-        if (!($userSettings.stripExif && file.type.startsWith("image/"))) {
-            xhr.send(formData);
-        }
+        xhr.send(formData);
     };
 
     const sanitizeName = (/** @type {string} */ value) => {

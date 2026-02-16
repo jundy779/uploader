@@ -1,27 +1,8 @@
 import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
-import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { getFileMetadata } from "$lib/db";
 
-type StoredFile = {
-    id: string;
-    name: string;
-    type: string;
-    checksum: string;
-    size: number;
-    createdAt: number;
-};
-
-type Index = {
-    filesById: Record<string, StoredFile>;
-    idByKey: Record<string, string>;
-};
-
-const isVercel = Boolean(process.env.VERCEL || process.env.VERCEL_ENV);
-const dataDir = path.resolve(
-    process.env.UPLOADER_DATA_DIR || (isVercel ? "/tmp/uploader" : ".data/uploader"),
-);
-const indexPath = path.join(dataDir, "index.json");
 const rateLimitState = new Map<string, { count: number; resetAt: number }>();
 
 const getClientIp = (request: Request) => {
@@ -60,19 +41,6 @@ const checkToken = (request: Request, url: URL) => {
     return false;
 };
 
-const loadIndex = async (): Promise<Index> => {
-    try {
-        const raw = await readFile(indexPath, "utf8");
-        const parsed = JSON.parse(raw) as Partial<Index>;
-        return {
-            filesById: parsed.filesById ?? {},
-            idByKey: parsed.idByKey ?? {},
-        };
-    } catch {
-        return { filesById: {}, idByKey: {} };
-    }
-};
-
 export const GET: RequestHandler = async ({ request, url }) => {
     if (!checkToken(request, url)) {
         return json(
@@ -97,13 +65,17 @@ export const GET: RequestHandler = async ({ request, url }) => {
         );
     }
 
-    const index = await loadIndex();
-    const id = idParam ? idParam.split(".")[0] : index.idByKey[keyParam || ""];
-    if (!id || !index.filesById[id]) {
+    let meta = null;
+    if (idParam) {
+        meta = await getFileMetadata(idParam.split(".")[0], 'id');
+    } else if (keyParam) {
+        meta = await getFileMetadata(keyParam, 'key');
+    }
+
+    if (!meta) {
         return json({ error: 404, message: "File not found" }, { status: 404 });
     }
 
-    const meta = index.filesById[id];
     return json({
         id: meta.id,
         type: meta.type,

@@ -144,13 +144,12 @@ const filePath = "/path/to/file.png";
 const form = new FormData();
 form.append("file", fs.createReadStream(filePath));
 
-fetch("${endpoints.upload}", {
+const res = await fetch("${endpoints.upload}", {
   method: "POST",
   headers: { Authorization: "Bearer {token}" },
   body: form
-})
-  .then((res) => res.json())
-  .then((json) => console.log(json));`}</pre>
+});
+console.log(await res.json());`}</pre>
                 </div>
                 <div class="api-card">
                     <div class="api-subtitle">Python (requests)</div>

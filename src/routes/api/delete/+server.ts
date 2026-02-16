@@ -6,42 +6,13 @@ import path from "node:path";
 import { MongoClient, GridFSBucket, ObjectId } from "mongodb";
 import { del } from "@vercel/blob";
 import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
-
-type StoredFile = {
-    id: string;
-    filePath: string;
-    storage?: "fs" | "mongodb" | "blob" | "r2";
-    gridfsId?: string;
-    blobPathname?: string;
-    r2Bucket?: string;
-    r2Key?: string;
-};
-
-type Index = {
-    filesById: Record<string, StoredFile>;
-    idByKey: Record<string, string>;
-};
+import { getMongo, getFileMetadata, deleteFileMetadata } from "$lib/db";
 
 const isVercel = Boolean(process.env.VERCEL || process.env.VERCEL_ENV);
 const dataDir = path.resolve(
     process.env.UPLOADER_DATA_DIR || (isVercel ? "/tmp/uploader" : ".data/uploader"),
 );
-const indexPath = path.join(dataDir, "index.json");
 const rateLimitState = new Map<string, { count: number; resetAt: number }>();
-
-let mongoClient: MongoClient | null = null;
-const getMongo = async () => {
-    const uri = process.env.MONGODB_URI || "";
-    const dbName = process.env.MONGODB_DB || "uploader";
-    const bucketName = process.env.MONGODB_BUCKET || "uploads";
-    if (!uri) throw new Error("Missing MONGODB_URI");
-    if (!mongoClient) {
-        mongoClient = await MongoClient.connect(uri);
-    }
-    const db = mongoClient.db(dbName);
-    const bucket = new GridFSBucket(db, { bucketName });
-    return { db, bucket, bucketName };
-};
 
 const getClientIp = (request: Request) => {
     const forwarded = request.headers.get("x-forwarded-for");
@@ -79,24 +50,6 @@ const checkToken = (request: Request, url: URL) => {
     return false;
 };
 
-const loadIndex = async (): Promise<Index> => {
-    try {
-        const raw = await readFile(indexPath, "utf8");
-        const parsed = JSON.parse(raw) as Partial<Index>;
-        return {
-            filesById: parsed.filesById ?? {},
-            idByKey: parsed.idByKey ?? {},
-        };
-    } catch {
-        return { filesById: {}, idByKey: {} };
-    }
-};
-
-const saveIndex = async (index: Index) => {
-    await mkdir(dataDir, { recursive: true });
-    await writeFile(indexPath, JSON.stringify(index), "utf8");
-};
-
 const handleDelete = async (url: URL) => {
     const key = url.searchParams.get("key");
     if (!key) {
@@ -106,13 +59,14 @@ const handleDelete = async (url: URL) => {
         );
     }
 
-    const index = await loadIndex();
-    const id = index.idByKey[key];
-    if (!id || !index.filesById[id]) {
+    const meta = await getFileMetadata(key, 'key');
+    
+    if (!meta) {
         return json({ error: 404, message: "File not found" }, { status: 404 });
     }
+    
+    const id = meta.id;
 
-    const meta = index.filesById[id];
     // Attempt deletions across all present backends
     try {
         if (meta.gridfsId) {
@@ -153,9 +107,7 @@ const handleDelete = async (url: URL) => {
         );
     }
 
-    delete index.filesById[id];
-    delete index.idByKey[key];
-    await saveIndex(index);
+    await deleteFileMetadata(id);
     return json({ success: true });
 };
 

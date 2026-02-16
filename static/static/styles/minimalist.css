@@ -1,250 +1,55 @@
-/* Premium Minimalist Theme */
 :root {
-    --bg: 255 255 255;
-    --bg_h: 249 250 251; /* Gray 50 */
+    --bg: 250 250 252;
+    --bg_h: 244 244 247;
     --bg0: 255 255 255;
-    --bg2: 243 244 246; /* Gray 100 */
-    
-    --fg: 17 24 39; /* Gray 900 */
-    --fg2: 55 65 81; /* Gray 700 */
-    
-    --primary: 0 0 0; /* Black for high contrast accents */
-    --secondary: 107 114 128; /* Gray 500 */
-    --accent: 0 0 0;
-    
-    --border: 229 231 235; /* Gray 200 */
-    --radius: 8px;
-    --font-stack: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --bg2: 238 238 242;
+    --fg: 18 20 24;
+    --fg2: 30 32 38;
+    --primary: 90 110 140;
+    --outl1: 210 214 222;
+    --outl2: 220 224 232;
+    --accent: 120 150 200;
 }
 
 body {
-    background-color: var(--bg);
-    color: var(--fg);
-    font-family: var(--font-stack);
-    -webkit-font-smoothing: antialiased;
-    line-height: 1.6;
+    background-color: rgb(var(--bg));
+    color: rgb(var(--fg));
 }
 
-a {
-    color: var(--fg);
-    text-decoration: none;
-    font-weight: 500;
-    transition: opacity 0.2s;
+.wrapper,
+.file,
+.settings,
+dialog,
+.drop-zone {
+    background-color: rgb(var(--bg0));
+    border: 1px solid rgb(var(--outl2));
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgb(20 20 30 / 0.06);
 }
 
-a:hover {
-    opacity: 0.7;
+button,
+.upload-label,
+.support-btn {
+    background-color: rgb(var(--bg2));
+    border: 1px solid rgb(var(--outl1));
+    border-radius: 8px;
+    color: rgb(var(--fg2));
 }
 
-/* Layout & Containers */
-.wrapper {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 40px 20px;
+input[type="text"] {
+    background-color: rgb(var(--bg0));
+    border: 1px solid rgb(var(--outl2));
+    border-radius: 8px;
+    color: rgb(var(--fg));
 }
 
-/* Nav */
-nav {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 20px;
-    margin-bottom: 40px;
-    border-bottom: 1px solid var(--border);
-}
-
-nav h1 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    letter-spacing: -0.5px;
-}
-
-nav ul {
-    gap: 24px;
-}
-
-nav a {
-    font-size: 0.95rem;
-    color: var(--fg2);
-}
-
-nav a:hover, nav a[aria-current="page"] {
-    color: var(--fg);
+.file .details {
+    border: 1px solid rgb(var(--outl2));
+    border-radius: 8px;
 }
 
 hr {
-    display: none; /* Hide default hr */
-}
-
-/* Cards & Sections */
-.settings, .glass-card, .file {
-    background: var(--bg0);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 24px;
-    margin-bottom: 24px;
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.file:hover, .api-card:hover {
-    border-color: #d1d5db;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-}
-
-/* Settings */
-.settings {
-    width: 100%;
-    box-shadow: none;
-}
-
-.settings summary {
-    font-weight: 600;
-    cursor: pointer;
-    list-style: none;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 4px;
-}
-
-.settings summary::after {
-    content: "+";
-    font-weight: 300;
-    font-size: 1.2rem;
-}
-
-details[open] summary::after {
-    content: "-";
-}
-
-.settings[open] summary {
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-}
-
-/* Forms & Inputs */
-input[type="text"], input[type="password"], select, textarea {
-    width: 100%;
-    padding: 12px 16px;
-    background: var(--bg_h);
-    border: 1px solid transparent;
-    border-radius: 6px;
-    color: var(--fg);
-    font-family: inherit;
-    font-size: 0.95rem;
-    transition: all 0.2s;
-}
-
-input:focus, select:focus, textarea:focus {
-    background: white;
-    border-color: var(--fg); /* Black border on focus */
-    outline: none;
-}
-
-/* Buttons */
-button, .upload-label, .support-btn {
-    background: var(--fg); /* Black button */
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 6px;
-    font-weight: 500;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: transform 0.1s, opacity 0.2s;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    text-transform: none; /* No caps */
-    letter-spacing: 0;
-}
-
-button:hover, .upload-label:hover {
-    opacity: 0.9;
-    transform: translateY(-1px);
-}
-
-button:active {
-    transform: translateY(0);
-}
-
-.upload-label.secondary {
-    background: white;
-    color: var(--fg);
-    border: 1px solid var(--border);
-}
-
-.upload-label.secondary:hover {
-    background: var(--bg_h);
-    border-color: #d1d5db;
-}
-
-/* Typography elements */
-h1, h2, h3 {
-    color: var(--fg);
-    letter-spacing: -0.02em;
-}
-
-p, span, label {
-    color: var(--fg2);
-}
-
-/* Uploaders API */
-details.api-block {
-    background: transparent;
-    border: none;
-    padding: 0;
-}
-
-.api-card {
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 24px;
-}
-
-.codeblock, pre {
-    background: var(--bg_h) !important;
-    border: 1px solid var(--border) !important;
-    color: var(--fg) !important;
-    border-radius: 6px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.9rem;
-}
-
-/* Tables */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
-}
-
-th {
-    text-align: left;
-    font-weight: 500;
-    color: var(--fg2);
-    border-bottom: 1px solid var(--border);
-    padding: 12px 0;
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-td {
-    padding: 16px 0;
-    border-bottom: 1px solid var(--border);
-    color: var(--fg);
-}
-
-tr:last-child td {
-    border-bottom: none;
-}
-
-/* Checkboxes */
-input[type="checkbox"] {
-    accent-color: black;
-    width: 16px;
-    height: 16px;
-    margin-right: 8px;
+    border: 0;
+    height: 1px;
+    background-color: rgb(var(--outl2));
 }

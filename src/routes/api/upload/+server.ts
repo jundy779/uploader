@@ -144,7 +144,49 @@ export const POST: RequestHandler = async ({ request, url }) => {
         return crypto.randomBytes(6).toString("hex");
     })();
 
-    const ext = safeExt(file.name);
+    // --- Image Optimization Logic ---
+    // Optimization Threshold: Only optimize if file size is greater than 10MB
+    const optimizationThreshold = 10 * 1024 * 1024;
+    
+    // Explicitly cast ArrayBuffer to Buffer to avoid TS errors
+    let fileBuffer = Buffer.from(await file.arrayBuffer() as any) as Buffer;
+    let fileSize = fileBuffer.length;
+    let fileName = file.name;
+    let fileType = file.type;
+
+    // List of optimizable image types
+    const optimizableTypes = ["image/jpeg", "image/png", "image/webp", "image/tiff", "image/heic"];
+    
+    // Only optimize if file is large enough
+    if (optimizableTypes.includes(fileType) && fileSize > optimizationThreshold) {
+        try {
+            const sharp = (await import("sharp")).default;
+            // Compress to WebP quality 80, keeping original resolution
+            const optimizedBuffer = await sharp(fileBuffer)
+                .webp({ quality: 80 })
+                .toBuffer();
+             
+             // Only use optimized version if it's actually smaller
+             if (optimizedBuffer.length < fileSize) {
+                 fileBuffer = optimizedBuffer;
+                 fileSize = optimizedBuffer.length;
+                 fileType = "image/webp";
+                 // Replace extension with .webp
+                 const dotIndex = fileName.lastIndexOf(".");
+                 if (dotIndex !== -1) {
+                     fileName = fileName.substring(0, dotIndex) + ".webp";
+                 } else {
+                     fileName = fileName + ".webp";
+                 }
+             }
+        } catch (err) {
+            console.error("Image optimization failed, falling back to original:", err);
+            // Fallback to original file if optimization fails
+        }
+    }
+    // --- End Optimization ---
+
+    const ext = safeExt(fileName);
     let storage =
         (typeof form.get("storage") === "string" ? String(form.get("storage")) : undefined) ||
         url.searchParams.get("storage") ||
@@ -159,14 +201,23 @@ export const POST: RequestHandler = async ({ request, url }) => {
     let r2Key: string | undefined = undefined;
 
     // Auto dual for large files if not explicitly set
-    const isDual = (!url.searchParams.get("storage") && !(typeof form.get("storage") === "string")) && file.size > dualThreshold;
+    const isDual = (!url.searchParams.get("storage") && !(typeof form.get("storage") === "string")) && fileSize > dualThreshold;
 
-    if (isDual) {
+    // Helper to create a stream from the buffer for services expecting streams
+    const createStream = () => Readable.from(fileBuffer);
+    
+    // Logic Routing:
+    // 1. Optimized File (WebP) -> MongoDB (Reliable for medium size)
+    // 2. Large Original File (> 7MB) -> R2 (Cheap storage), fallback to MongoDB if fails
+    // 3. Small Original File -> Local FS
+    
+    // Check if file was actually optimized (type changed to webp)
+    const isOptimized = fileType === "image/webp" && file.type !== "image/webp"; 
+
+    if (isOptimized) {
+        // Option 1: Optimized file -> MongoDB
+        storage = "mongodb";
         try {
-            const webStream: ReadableStream = (file.stream() as any);
-            const teeFn = (webStream as any).tee;
-            const [mongoStream, r2Stream] = teeFn ? teeFn.call(webStream) : [webStream, webStream];
-
             const { bucket, bucketName } = await getMongo();
             const hasher = crypto.createHash("md5");
             const hasherTransform = new Transform({
@@ -175,50 +226,89 @@ export const POST: RequestHandler = async ({ request, url }) => {
                     cb(null, chunk);
                 },
             });
-            const uploadMongo = bucket.openUploadStream(`${id}${ext}`, {
+            const uploadStream = bucket.openUploadStream(`${id}${ext}`, {
                 metadata: {
-                    originalName: file.name || id,
-                    contentType: file.type || "application/octet-stream",
+                    originalName: fileName || id,
+                    contentType: fileType || "application/octet-stream",
                 },
             });
-
+            await pipeline(createStream(), hasherTransform, uploadStream);
+            checksum = hasher.digest("hex");
+            gridfsId = String(uploadStream.id);
+            filePath = `gridfs://${bucketName}/${id}${ext}`;
+        } catch (err) {
+            return json({ error: 500, message: `MongoDB optimization upload failed: ${err}` }, { status: 500 });
+        }
+    } else if (fileSize > dualThreshold) {
+        // Option 2: Large Original File -> R2 -> Fallback to MongoDB
+        storage = "r2";
+        try {
             const endpoint = env.R2_ENDPOINT || "";
             const bucketR2 = env.R2_BUCKET || "";
             const accessKeyId = env.R2_ACCESS_KEY_ID || "";
             const secretAccessKey = env.R2_SECRET_ACCESS_KEY || "";
+            
             if (!endpoint || !bucketR2 || !accessKeyId || !secretAccessKey) {
-                return json(
-                    { error: 500, message: "Missing R2 configuration env" },
-                    { status: 500 },
-                );
+                throw new Error("Missing R2 configuration");
             }
+
             const s3 = new S3Client({
                 region: "auto",
                 endpoint,
                 credentials: { accessKeyId, secretAccessKey },
             });
-            const keyObj = `${id}${ext}`;
 
-            await Promise.all([
-                pipeline(Readable.fromWeb(mongoStream as any), hasherTransform, uploadMongo),
-                s3.send(
-                    new PutObjectCommand({
-                        Bucket: bucketR2,
-                        Key: keyObj,
-                        Body: Readable.fromWeb(r2Stream as any) as any,
-                        ContentType: file.type || "application/octet-stream",
-                    }),
-                ),
-            ]);
+            const hasher = crypto.createHash("md5");
+            const hasherTransform = new Transform({
+                transform(chunk, _enc, cb) {
+                    hasher.update(chunk as Buffer);
+                    cb(null, chunk);
+                },
+            });
+
+            const uploadStream = createStream().pipe(hasherTransform);
+            const keyObj = `${id}${ext}`;
+            
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucketR2,
+                    Key: keyObj,
+                    Body: uploadStream as any,
+                    ContentType: fileType || "application/octet-stream",
+                }),
+            );
 
             checksum = hasher.digest("hex");
-            gridfsId = String(uploadMongo.id);
             filePath = `r2://${bucketR2}/${keyObj}`;
             r2Bucket = bucketR2;
             r2Key = keyObj;
-            storage = "r2";
-        } catch (err) {
-            return json({ error: 500, message: `Dual upload failed: ${err}` }, { status: 500 });
+
+        } catch (r2Err) {
+            console.error("R2 Upload failed, falling back to MongoDB:", r2Err);
+            // Fallback to MongoDB
+            storage = "mongodb";
+            try {
+                const { bucket, bucketName } = await getMongo();
+                const hasher = crypto.createHash("md5");
+                const hasherTransform = new Transform({
+                    transform(chunk, _enc, cb) {
+                        hasher.update(chunk as Buffer);
+                        cb(null, chunk);
+                    },
+                });
+                const uploadStream = bucket.openUploadStream(`${id}${ext}`, {
+                    metadata: {
+                        originalName: fileName || id,
+                        contentType: fileType || "application/octet-stream",
+                    },
+                });
+                await pipeline(createStream(), hasherTransform, uploadStream);
+                checksum = hasher.digest("hex");
+                gridfsId = String(uploadStream.id);
+                filePath = `gridfs://${bucketName}/${id}${ext}`;
+            } catch (mongoErr) {
+                 return json({ error: 500, message: `Upload failed (R2 & Mongo): ${mongoErr}` }, { status: 500 });
+            }
         }
     } else if (storage === "mongodb") {
         try {
@@ -232,11 +322,11 @@ export const POST: RequestHandler = async ({ request, url }) => {
             });
             const uploadStream = bucket.openUploadStream(`${id}${ext}`, {
                 metadata: {
-                    originalName: file.name || id,
-                    contentType: file.type || "application/octet-stream",
+                    originalName: fileName || id,
+                    contentType: fileType || "application/octet-stream",
                 },
             });
-            await pipeline(Readable.fromWeb(file.stream() as any), hasherTransform, uploadStream);
+            await pipeline(createStream(), hasherTransform, uploadStream);
             checksum = hasher.digest("hex");
             gridfsId = String(uploadStream.id);
             filePath = `gridfs://${bucketName}/${id}${ext}`;
@@ -253,14 +343,11 @@ export const POST: RequestHandler = async ({ request, url }) => {
                 },
             });
             
-            // Pipe connection: web stream -> node readable -> hasher -> upload
-            // We use the transformed stream for upload so it pulls data through the hasher
-            const sourceStream = Readable.fromWeb(file.stream() as any);
+            const sourceStream = createStream();
             const uploadStream = sourceStream.pipe(hasherTransform);
 
             const token = env.BLOB_READ_WRITE_TOKEN || undefined;
 
-            // put() consumes the stream. As it reads, hasherTransform updates the hash.
             const result = await put(`${id}${ext}`, uploadStream, {
                 access: "public",
                 addRandomSuffix: false,
@@ -299,19 +386,17 @@ export const POST: RequestHandler = async ({ request, url }) => {
                 },
             });
 
-            // Pipe connection: web stream -> node readable -> hasher -> upload
-            const sourceStream = Readable.fromWeb(file.stream() as any);
+            const sourceStream = createStream();
             const uploadStream = sourceStream.pipe(hasherTransform);
 
             const keyObj = `${id}${ext}`;
             
-            // S3 Upload consumes the stream
             await s3.send(
                 new PutObjectCommand({
                     Bucket: bucket,
                     Key: keyObj,
-                    Body: uploadStream,
-                    ContentType: file.type || "application/octet-stream",
+                    Body: uploadStream as any,
+                    ContentType: fileType || "application/octet-stream",
                 }),
             );
 
@@ -323,10 +408,37 @@ export const POST: RequestHandler = async ({ request, url }) => {
             return json({ error: 500, message: `R2 upload failed: ${err}` }, { status: 500 });
         }
     } else {
+        // Option 3: Small Original File -> FS + Vercel Blob (Dual)
+        
+        // 1. Always save to Local FS
         await mkdir(filesDir, { recursive: true });
-        filePath = path.join(filesDir, `${id}${ext}`);
-        await pipeline(Readable.fromWeb(file.stream() as any), createWriteStream(filePath));
-        checksum = await md5File(filePath);
+        const localFilePath = path.join(filesDir, `${id}${ext}`);
+        await pipeline(createStream(), createWriteStream(localFilePath));
+        checksum = await md5File(localFilePath);
+        
+        // Default to FS if Blob fails/skipped
+        filePath = localFilePath;
+        storage = "fs";
+
+        // 2. Try Upload to Vercel Blob
+        try {
+            const token = env.BLOB_READ_WRITE_TOKEN || undefined;
+            if (token) {
+                const blobResult = await put(`${id}${ext}`, createStream(), {
+                    access: "public",
+                    addRandomSuffix: false,
+                    token,
+                });
+                
+                // If Blob succeeds, use it as primary storage
+                filePath = blobResult.url;
+                blobPathname = (blobResult as any).pathname || undefined;
+                storage = "blob";
+            }
+        } catch (blobErr) {
+            console.warn("Vercel Blob upload failed (using FS only):", blobErr);
+            // storage remains "fs", filePath remains localFilePath
+        }
     }
     const key = crypto.randomBytes(24).toString("hex");
     const createdAt = Date.now();
@@ -335,12 +447,12 @@ export const POST: RequestHandler = async ({ request, url }) => {
 
     await saveFileMetadata({
         id,
-        name: file.name || id,
-        type: file.type || "application/octet-stream",
+        name: fileName || id,
+        type: fileType || "application/octet-stream",
         ext,
         key,
         checksum,
-        size: file.size,
+        size: fileSize,
         createdAt,
         filePath,
         private: isPrivate,
@@ -363,7 +475,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
     return json({
         id,
         ext,
-        type: file.type || "application/octet-stream",
+        type: fileType || "application/octet-stream",
         checksum,
         key,
         origin: url.origin,

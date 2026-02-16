@@ -1,34 +1,31 @@
-/* Vibrant Glassmorphism Theme (Refined) */
-
+/* Vibrant Glassmorphism Theme (Dark & Clean) */
 :root {
-    /* Color Palette - Matching the Reference */
-    --primary: 255 255 255;      /* White text mostly */
-    --secondary: 167 139 250;    /* Soft Purple */
-    --accent: 244 114 182;       /* Pink */
+    /* Color Palette - Dark & Clean like Default but with Glass */
+    --primary: 255 255 255;      
+    --secondary: 99 102 241;    /* Clean Indigo/Blue */
+    --accent: 79 70 229;        /* Deeper Indigo */
     
-    /* Background Gradient - Exact match attempt */
+    /* Background Gradient - Dark & Subtle Ambient Glow */
     --bg-gradient: 
         radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
-        radial-gradient(at 50% 0%, hsla(260, 100%, 70%, 0.3) 0, transparent 50%), /* Top light purple glow */
-        radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%), 
-        radial-gradient(at 0% 50%, hsla(260, 60%, 50%, 0.4) 0, transparent 50%), /* Mid purple */
-        radial-gradient(at 100% 50%, hsla(330, 60%, 50%, 0.4) 0, transparent 50%), /* Mid pink */
-        radial-gradient(at 0% 100%, hsla(240, 50%, 30%, 1) 0, transparent 50%), 
-        radial-gradient(at 100% 100%, hsla(280, 50%, 30%, 1) 0, transparent 50%);
+        radial-gradient(at 50% 0%, hsla(240, 100%, 70%, 0.1) 0, transparent 50%), /* Very subtle top glow */
+        radial-gradient(at 100% 0%, hsla(240,49%,10%,1) 0, transparent 50%), 
+        radial-gradient(at 0% 100%, hsla(220, 50%, 10%, 1) 0, transparent 50%), 
+        radial-gradient(at 100% 100%, hsla(260, 50%, 10%, 1) 0, transparent 50%);
 
     /* Base Background Color */
-    --bg-base: #5b4a96; /* Lighter base for blending */
+    --bg-base: #0f172a; /* Slate 900 - Dark Blue/Grey */
 
     /* Text */
     --fg: 255 255 255;
-    --fg2: 230 230 255;
+    --fg2: 203 213 225; /* Slate 300 */
     
-    /* Glass Effect Variables - Enhanced */
-    --glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.05));
-    --glass-border: rgba(255, 255, 255, 0.4);
-    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.25);
+    /* Dark Glass Effect Variables */
+    --glass-bg: linear-gradient(145deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.4)); /* Dark semi-transparent */
+    --glass-border: rgba(255, 255, 255, 0.1); /* Very subtle white border */
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5); /* Stronger shadow for depth */
     --glass-blur: blur(20px);
-    --glass-radius: 32px; /* Super rounded like reference */
+    --glass-radius: 16px; /* Slightly less rounded for cleaner look */
 
     /* Mapped Variables */
     --bg: 15 23 42; 

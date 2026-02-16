@@ -1,58 +1,277 @@
+/* Neumorphism Theme (Soft UI) */
 :root {
-    --bg: 236 240 246;
-    --bg_h: 244 247 252;
-    --bg0: 240 244 250;
+    --bg: 236 240 243;
+    --bg_h: 236 240 243; /* Same as bg for flatness */
+    --bg0: 236 240 243;
     --bg2: 228 234 244;
-    --fg: 28 32 40;
-    --fg2: 14 18 26;
+    
+    --fg: 74 85 104; /* Dark gray text */
+    --fg2: 100 116 139; /* Lighter gray */
+    
     --primary: 120 140 170;
-    --outl1: 210 220 235;
-    --outl2: 220 228 240;
+    --secondary: 74 85 104;
     --accent: 140 170 220;
+    
+    --outl1: 255 255 255;
+    --outl2: 209 217 230;
+
+    /* Neumorphism Shadows */
+    --shadow-light: -6px -6px 14px rgba(255, 255, 255, 0.7);
+    --shadow-dark: 6px 6px 10px rgba(163, 177, 198, 0.5);
+    --shadow-inset: inset 6px 6px 10px rgba(163, 177, 198, 0.6), inset -6px -6px 14px rgba(255, 255, 255, 0.8);
+    
+    --radius: 20px;
 }
 
 body {
     background-color: rgb(var(--bg));
     color: rgb(var(--fg));
+    font-family: 'Nunito', 'Inter', sans-serif; /* Soft rounded font */
 }
 
-.wrapper,
-.file,
-.settings,
-dialog,
-.drop-zone,
-button,
-.upload-label,
-.support-btn,
-input[type="text"] {
-    background-color: rgb(var(--bg0));
-    border: 0;
-    border-radius: 16px;
-    box-shadow:
-        10px 10px 20px rgb(20 30 60 / 0.12),
-        -10px -10px 20px rgb(255 255 255 / 0.8);
+a {
+    color: #4a5568;
+    text-decoration: none;
+    font-weight: 700;
+    transition: color 0.2s;
 }
 
-button,
-.upload-label,
-.support-btn {
-    color: rgb(var(--fg2));
+a:hover {
+    color: #2d3748;
 }
 
-input[type="text"],
-input[type="checkbox"] {
+/* Core Components */
+.wrapper, .settings, Dialog section, .glass-card {
+    background-color: rgb(var(--bg));
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-dark), var(--shadow-light);
+    border: none;
+    padding: 24px !important;
     color: rgb(var(--fg));
 }
 
-.file .details {
-    border-radius: 14px;
-    box-shadow:
-        inset 6px 6px 12px rgb(20 30 60 / 0.12),
-        inset -6px -6px 12px rgb(255 255 255 / 0.9);
+/* Nav */
+nav {
+    border-bottom: 2px solid rgba(163, 177, 198, 0.2);
+    padding-bottom: 15px;
+    margin-bottom: 30px;
 }
 
 hr {
-    border: 0;
-    height: 2px;
-    background-color: rgb(var(--outl2));
+    display: none !important;
 }
+
+/* Buttons */
+button, .upload-label, .support-btn {
+    background-color: rgb(var(--bg));
+    color: rgb(var(--fg));
+    border: none;
+    border-radius: 50px; /* Pill shape */
+    box-shadow: var(--shadow-dark), var(--shadow-light);
+    font-weight: 700;
+    padding: 12px 24px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+button:hover, .upload-label:hover, .support-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 8px 8px 12px rgba(163, 177, 198, 0.6), -8px -8px 16px rgba(255, 255, 255, 0.8);
+}
+
+button:active, .upload-label:active {
+    box-shadow: var(--shadow-inset);
+    transform: translateY(0);
+}
+
+.upload-label.secondary {
+    box-shadow: none;
+    border: 2px solid rgba(163, 177, 198, 0.3);
+    background: transparent;
+}
+
+/* Inputs */
+input[type="text"], input[type="password"], textarea, select {
+    background-color: rgb(var(--bg));
+    border: none;
+    border-radius: 12px;
+    box-shadow: var(--shadow-inset);
+    padding: 12px 16px;
+    color: rgb(var(--fg));
+    width: 100%;
+    outline: none;
+    transition: box-shadow 0.2s;
+}
+
+input:focus {
+    box-shadow: inset 4px 4px 8px rgba(163, 177, 198, 0.6), inset -4px -4px 10px rgba(255, 255, 255, 0.9);
+}
+
+/* File List */
+.file, .upload-item {
+    background-color: rgb(var(--bg));
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-dark), var(--shadow-light);
+    padding: 15px;
+    margin-bottom: 15px;
+    border: none;
+}
+
+/* Modal / Pre-upload */
+dialog {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+
+dialog::backdrop {
+    background: rgba(236, 240, 243, 0.8); /* Semi-transparent base color */
+    backdrop-filter: blur(4px);
+}
+
+.preupload {
+    gap: 20px !important;
+    max-width: 500px !important;
+    width: 90vw;
+}
+
+.preupload-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px !important;
+    max-height: 60vh;
+    padding: 10px;
+}
+
+.preupload-item {
+    background-color: rgb(var(--bg));
+    border-radius: 12px;
+    box-shadow: var(--shadow-inset);
+    padding: 15px;
+    border: none;
+}
+
+.preupload-row {
+    margin-bottom: 12px;
+    align-items: center;
+    display: flex;
+    gap: 15px;
+}
+
+.preupload-label {
+    min-width: 60px;
+    font-weight: 600;
+    color: rgb(var(--fg2));
+}
+
+.preupload-input {
+    box-shadow: none !important; /* Flat inside item? or inset? */
+    background: rgba(255,255,255,0.5);
+    border: 1px solid rgba(255,255,255,0.8);
+}
+
+/* Settings */
+.settings {
+    width: fit-content;
+    transition: all 0.3s ease;
+}
+
+.settings:not([open]) {
+    padding: 0 !important;
+    border-radius: 50px;
+}
+
+.settings[open] {
+    padding: 24px !important;
+}
+
+.settings summary {
+    padding: 12px 24px;
+    cursor: pointer;
+    font-weight: 700;
+    list-style: none;
+    color: rgb(var(--fg));
+}
+
+/* Uploaders API Section */
+details {
+    background-color: rgb(var(--bg));
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-dark), var(--shadow-light);
+    margin-bottom: 20px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+details[open] {
+    box-shadow: var(--shadow-inset); /* Pressed look when open? or just plain */
+}
+
+summary {
+    padding: 15px 20px;
+    cursor: pointer;
+    font-weight: 700;
+    outline: none;
+}
+
+details[open] summary {
+    border-bottom: 1px solid rgba(163, 177, 198, 0.2);
+}
+
+.api-block {
+    background-color: rgb(var(--bg)); /* Consistent bg */
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: var(--shadow-inset); /* Inset for content areas */
+}
+
+.api-card {
+    background-color: rgb(var(--bg));
+    border-radius: 12px;
+    box-shadow: var(--shadow-dark), var(--shadow-light); /* Pop out cards */
+    padding: 12px;
+    transition: transform 0.2s;
+    border: none;
+}
+
+.api-card:hover {
+    transform: translateY(-2px);
+}
+
+.codeblock, pre {
+    background: #e6e9ef !important; /* Slightly darker than bg */
+    border-radius: 8px;
+    padding: 12px !important;
+    font-family: monospace;
+    color: #334155;
+    box-shadow: var(--shadow-inset); /* Depressed code block */
+    border: none;
+}
+
+/* Tables */
+details th {
+    color: var(--fg);
+    border-bottom: 2px solid rgba(163, 177, 198, 0.3);
+    padding: 10px;
+}
+
+details td {
+    padding: 10px;
+    border-bottom: 1px solid rgba(163, 177, 198, 0.15);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: rgb(var(--bg)); }
+::-webkit-scrollbar-thumb { 
+    background: #cbd5e0; 
+    border-radius: 5px; 
+    border: 3px solid rgb(var(--bg));
+}
+::-webkit-scrollbar-thumb:hover { background: #a0aec0; }

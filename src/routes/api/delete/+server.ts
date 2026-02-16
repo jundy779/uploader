@@ -3,10 +3,18 @@ import type { RequestHandler } from "./$types";
 import { rm } from "node:fs/promises";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { MongoClient, GridFSBucket, ObjectId } from "mongodb";
+import { del } from "@vercel/blob";
+import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 type StoredFile = {
     id: string;
     filePath: string;
+    storage?: "fs" | "mongodb" | "blob" | "r2";
+    gridfsId?: string;
+    blobPathname?: string;
+    r2Bucket?: string;
+    r2Key?: string;
 };
 
 type Index = {
@@ -20,6 +28,20 @@ const dataDir = path.resolve(
 );
 const indexPath = path.join(dataDir, "index.json");
 const rateLimitState = new Map<string, { count: number; resetAt: number }>();
+
+let mongoClient: MongoClient | null = null;
+const getMongo = async () => {
+    const uri = process.env.MONGODB_URI || "";
+    const dbName = process.env.MONGODB_DB || "uploader";
+    const bucketName = process.env.MONGODB_BUCKET || "uploads";
+    if (!uri) throw new Error("Missing MONGODB_URI");
+    if (!mongoClient) {
+        mongoClient = await MongoClient.connect(uri);
+    }
+    const db = mongoClient.db(dbName);
+    const bucket = new GridFSBucket(db, { bucketName });
+    return { db, bucket, bucketName };
+};
 
 const getClientIp = (request: Request) => {
     const forwarded = request.headers.get("x-forwarded-for");
@@ -91,8 +113,39 @@ const handleDelete = async (url: URL) => {
     }
 
     const meta = index.filesById[id];
+    // Attempt deletions across all present backends
     try {
-        await rm(meta.filePath, { force: true });
+        if (meta.gridfsId) {
+            const { bucket } = await getMongo();
+            try { await bucket.delete(new ObjectId(meta.gridfsId)); } catch {}
+        }
+        if (meta.blobPathname) {
+            const token = process.env.BLOB_READ_WRITE_TOKEN || undefined;
+            try { await del(meta.blobPathname, { token }); } catch {}
+        }
+        if (meta.r2Bucket && meta.r2Key) {
+            const endpoint = process.env.R2_ENDPOINT || "";
+            const accessKeyId = process.env.R2_ACCESS_KEY_ID || "";
+            const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY || "";
+            if (endpoint && accessKeyId && secretAccessKey) {
+                const s3 = new S3Client({
+                    region: "auto",
+                    endpoint,
+                    credentials: { accessKeyId, secretAccessKey },
+                });
+                try {
+                    await s3.send(
+                        new DeleteObjectCommand({
+                            Bucket: meta.r2Bucket,
+                            Key: meta.r2Key,
+                        }),
+                    );
+                } catch {}
+            }
+        }
+        if (meta.filePath && !meta.filePath.startsWith("gridfs://") && !meta.filePath.startsWith("r2://") && !meta.filePath.startsWith("http")) {
+            try { await rm(meta.filePath, { force: true }); } catch {}
+        }
     } catch {
         return json(
             { error: 500, message: "Failed deleting file" },

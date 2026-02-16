@@ -6,6 +6,10 @@ import crypto from "node:crypto";
 import path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import { Transform } from "node:stream";
+import { MongoClient, GridFSBucket, ObjectId } from "mongodb";
+import { put } from "@vercel/blob";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 type StoredFile = {
     id: string;
@@ -20,6 +24,11 @@ type StoredFile = {
     private?: boolean;
     passwordSalt?: string;
     passwordHash?: string;
+    storage?: "fs" | "mongodb" | "blob" | "r2";
+    gridfsId?: string;
+    blobPathname?: string;
+    r2Bucket?: string;
+    r2Key?: string;
 };
 
 type Index = {
@@ -35,6 +44,21 @@ const filesDir = path.join(dataDir, "files");
 const indexPath = path.join(dataDir, "index.json");
 const maxBytes = Number(process.env.UPLOADER_MAX_BYTES || 104_857_600);
 const rateLimitState = new Map<string, { count: number; resetAt: number }>();
+const dualThreshold = Number(process.env.UPLOADER_DUAL_THRESHOLD_BYTES || 7 * 1024 * 1024);
+
+let mongoClient: MongoClient | null = null;
+const getMongo = async () => {
+    const uri = process.env.MONGODB_URI || "";
+    const dbName = process.env.MONGODB_DB || "uploader";
+    const bucketName = process.env.MONGODB_BUCKET || "uploads";
+    if (!uri) throw new Error("Missing MONGODB_URI");
+    if (!mongoClient) {
+        mongoClient = await MongoClient.connect(uri);
+    }
+    const db = mongoClient.db(dbName);
+    const bucket = new GridFSBucket(db, { bucketName });
+    return { db, bucket, bucketName };
+};
 
 const getClientIp = (request: Request) => {
     const forwarded = request.headers.get("x-forwarded-for");
@@ -176,15 +200,181 @@ export const POST: RequestHandler = async ({ request, url }) => {
     })();
 
     const ext = safeExt(file.name);
-    await mkdir(filesDir, { recursive: true });
-    const filePath = path.join(filesDir, `${id}${ext}`);
+    let storage =
+        (typeof form.get("storage") === "string" ? String(form.get("storage")) : undefined) ||
+        url.searchParams.get("storage") ||
+        process.env.UPLOADER_STORAGE_DEFAULT ||
+        "fs";
 
-    await pipeline(
-        Readable.fromWeb(file.stream() as any),
-        createWriteStream(filePath),
-    );
+    let filePath = "";
+    let checksum = "";
+    let gridfsId: string | undefined = undefined;
+    let blobPathname: string | undefined = undefined;
+    let r2Bucket: string | undefined = undefined;
+    let r2Key: string | undefined = undefined;
 
-    const checksum = await md5File(filePath);
+    // Auto dual for large files if not explicitly set
+    const isDual = (!url.searchParams.get("storage") && !(typeof form.get("storage") === "string")) && file.size > dualThreshold;
+
+    if (isDual) {
+        try {
+            const webStream: ReadableStream = (file.stream() as any);
+            const teeFn = (webStream as any).tee;
+            const [mongoStream, r2Stream] = teeFn ? teeFn.call(webStream) : [webStream, webStream];
+
+            const { bucket, bucketName } = await getMongo();
+            const hasher = crypto.createHash("md5");
+            const hasherTransform = new Transform({
+                transform(chunk, _enc, cb) {
+                    hasher.update(chunk as Buffer);
+                    cb(null, chunk);
+                },
+            });
+            const uploadMongo = bucket.openUploadStream(`${id}${ext}`, {
+                metadata: {
+                    originalName: file.name || id,
+                    contentType: file.type || "application/octet-stream",
+                },
+            });
+
+            const endpoint = process.env.R2_ENDPOINT || "";
+            const bucketR2 = process.env.R2_BUCKET || "";
+            const accessKeyId = process.env.R2_ACCESS_KEY_ID || "";
+            const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY || "";
+            if (!endpoint || !bucketR2 || !accessKeyId || !secretAccessKey) {
+                return json(
+                    { error: 500, message: "Missing R2 configuration env" },
+                    { status: 500 },
+                );
+            }
+            const s3 = new S3Client({
+                region: "auto",
+                endpoint,
+                credentials: { accessKeyId, secretAccessKey },
+            });
+            const keyObj = `${id}${ext}`;
+
+            await Promise.all([
+                pipeline(Readable.fromWeb(mongoStream as any), hasherTransform, uploadMongo),
+                s3.send(
+                    new PutObjectCommand({
+                        Bucket: bucketR2,
+                        Key: keyObj,
+                        Body: Readable.fromWeb(r2Stream as any) as any,
+                        ContentType: file.type || "application/octet-stream",
+                    }),
+                ),
+            ]);
+
+            checksum = hasher.digest("hex");
+            gridfsId = String(uploadMongo.id);
+            filePath = `r2://${bucketR2}/${keyObj}`;
+            r2Bucket = bucketR2;
+            r2Key = keyObj;
+            storage = "r2";
+        } catch (err) {
+            return json({ error: 500, message: `Dual upload failed: ${err}` }, { status: 500 });
+        }
+    } else if (storage === "mongodb") {
+        try {
+            const { bucket, bucketName } = await getMongo();
+            const hasher = crypto.createHash("md5");
+            const hasherTransform = new Transform({
+                transform(chunk, _enc, cb) {
+                    hasher.update(chunk as Buffer);
+                    cb(null, chunk);
+                },
+            });
+            const uploadStream = bucket.openUploadStream(`${id}${ext}`, {
+                metadata: {
+                    originalName: file.name || id,
+                    contentType: file.type || "application/octet-stream",
+                },
+            });
+            await pipeline(Readable.fromWeb(file.stream() as any), hasherTransform, uploadStream);
+            checksum = hasher.digest("hex");
+            gridfsId = String(uploadStream.id);
+            filePath = `gridfs://${bucketName}/${id}${ext}`;
+        } catch (err) {
+            return json({ error: 500, message: `MongoDB upload failed: ${err}` }, { status: 500 });
+        }
+    } else if (storage === "blob") {
+        try {
+            const webStream: ReadableStream = (file.stream() as any);
+            const [uploadStream, hashStream] = (webStream as any).tee
+                ? (webStream as any).tee()
+                : [webStream, webStream];
+            const hasher = crypto.createHash("md5");
+            const hasherTransform = new Transform({
+                transform(chunk, _enc, cb) {
+                    hasher.update(chunk as Buffer);
+                    cb(null, chunk);
+                },
+            });
+            const token = process.env.BLOB_READ_WRITE_TOKEN || undefined;
+            const result = await put(`${id}${ext}`, uploadStream as any, {
+                access: "public",
+                addRandomSuffix: false,
+                token,
+            });
+            await pipeline(Readable.fromWeb(hashStream as any), hasherTransform);
+            checksum = hasher.digest("hex");
+            filePath = result.url;
+            blobPathname = (result as any).pathname || undefined;
+        } catch (err) {
+            return json({ error: 500, message: `Blob upload failed: ${err}` }, { status: 500 });
+        }
+    } else if (storage === "r2") {
+        try {
+            const endpoint = process.env.R2_ENDPOINT || "";
+            const bucket = process.env.R2_BUCKET || "";
+            const accessKeyId = process.env.R2_ACCESS_KEY_ID || "";
+            const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY || "";
+            if (!endpoint || !bucket || !accessKeyId || !secretAccessKey) {
+                return json(
+                    { error: 500, message: "Missing R2 configuration env" },
+                    { status: 500 },
+                );
+            }
+            const s3 = new S3Client({
+                region: "auto",
+                endpoint,
+                credentials: { accessKeyId, secretAccessKey },
+            });
+            const webStream: ReadableStream = (file.stream() as any);
+            const [uploadStream, hashStream] = (webStream as any).tee
+                ? (webStream as any).tee()
+                : [webStream, webStream];
+            const hasher = crypto.createHash("md5");
+            const hasherTransform = new Transform({
+                transform(chunk, _enc, cb) {
+                    hasher.update(chunk as Buffer);
+                    cb(null, chunk);
+                },
+            });
+            const keyObj = `${id}${ext}`;
+            await s3.send(
+                new PutObjectCommand({
+                    Bucket: bucket,
+                    Key: keyObj,
+                    Body: Readable.fromWeb(uploadStream as any) as any,
+                    ContentType: file.type || "application/octet-stream",
+                }),
+            );
+            await pipeline(Readable.fromWeb(hashStream as any), hasherTransform);
+            checksum = hasher.digest("hex");
+            filePath = `r2://${bucket}/${keyObj}`;
+            r2Bucket = bucket;
+            r2Key = keyObj;
+        } catch (err) {
+            return json({ error: 500, message: `R2 upload failed: ${err}` }, { status: 500 });
+        }
+    } else {
+        await mkdir(filesDir, { recursive: true });
+        filePath = path.join(filesDir, `${id}${ext}`);
+        await pipeline(Readable.fromWeb(file.stream() as any), createWriteStream(filePath));
+        checksum = await md5File(filePath);
+    }
     const key = crypto.randomBytes(24).toString("hex");
     const createdAt = Date.now();
     const passwordSalt = isPrivate ? crypto.randomBytes(16).toString("hex") : "";
@@ -203,9 +393,22 @@ export const POST: RequestHandler = async ({ request, url }) => {
         private: isPrivate,
         passwordSalt: passwordSalt || undefined,
         passwordHash: passwordHash || undefined,
+        storage:
+            storage === "mongodb"
+                ? "mongodb"
+                : storage === "blob"
+                ? "blob"
+                : storage === "r2"
+                ? "r2"
+                : "fs",
+        gridfsId: gridfsId,
+        blobPathname,
+        r2Bucket,
+        r2Key,
     };
     index.idByKey[key] = id;
     await saveIndex(index);
+
 
     return json({
         id,

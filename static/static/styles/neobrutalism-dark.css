@@ -1,160 +1,338 @@
+/* Neo-Brutalism Dark Theme (Cyberpunk/Saweria Dark) */
 :root {
-    --bg: 24 26 32;
-    --bg_h: 30 33 40;
-    --bg0: 36 40 48;
-    --bg2: 44 49 59;
-    --accent-blue: 120 168 248;
-    --accent-blue-dark: 90 135 220;
-    --accent-blue-soft: 176 200 245;
-    --button-blue: 120 162 235;
-    --button-blue-hover: 100 142 220;
-    --fg: 230 232 238;
-    --fg2: 245 246 250;
-    --primary: 220 224 235;
-    --outl1: 220 224 235;
-    --outl2: 220 224 235;
-    --blue: 164 196 255;
-    --sky: 230 190 220;
-}
-
-*,
-*::before,
-*::after {
-    box-sizing: border-box;
+    --bg: 10 10 10; /* Almost Black */
+    --bg_h: 24 24 27;
+    --bg0: 0 0 0;
+    --bg2: 34 197 94; /* Neon Green Accent */
+    
+    --fg: 255 255 255;
+    --fg2: 200 200 200;
+    
+    --primary: 255 255 255; /* White borders */
+    --secondary: 0 0 0;
+    --accent: 236 72 153; /* Neon Pink */
+    
+    /* Neo-Brutalism Hard Shadow (Dark Mode) */
+    --shadow-hard: 4px 4px 0px 0px #ffffff;
+    --shadow-hard-hover: 6px 6px 0px 0px #34d399; /* Green shadow on hover */
+    --shadow-red: 4px 4px 0px 0px #ef4444;
+    
+    --border-thick: 2px solid #ffffff;
+    --radius: 6px; 
 }
 
 body {
     background-color: rgb(var(--bg));
     color: rgb(var(--fg));
-    font-family: "Arial Black", system-ui, -apple-system, sans-serif;
-    letter-spacing: 0.2px;
+    font-family: 'JetBrains Mono', 'Archivo Black', monospace; /* Tech/Cyber feel */
+    background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 30px 30px; /* Grid pattern */
 }
 
 a {
-    font-weight: 700;
+    color: #4ade80; /* Neon Green */
+    text-decoration: underline;
     text-decoration-thickness: 2px;
-    text-underline-offset: 2px;
-}
-
-button,
-input,
-textarea,
-select {
-    font: inherit;
-}
-
-button,
-input[type="text"],
-.upload-label,
-.file,
-.settings,
-.wrapper,
-dialog,
-table,
-.drop-zone {
-    border: 2px solid rgb(var(--primary));
-    box-shadow: 3px 3px 0 rgb(var(--primary));
-    border-radius: 0;
-}
-
-button,
-.upload-label {
-    text-transform: uppercase;
     font-weight: 800;
-    letter-spacing: 0.4px;
-    background: rgb(var(--button-blue));
-    background-image: none;
-    color: rgb(var(--fg2));
 }
 
-button:hover,
-.upload-label:hover,
 a:hover {
-    filter: contrast(1.15) saturate(1.1);
+    background: #4ade80;
+    color: #000;
+    text-decoration: none;
 }
 
-body button:hover,
-body .upload-label:hover,
-body .support-btn:hover {
-    background-color: rgb(var(--button-blue-hover));
+/* Core Components */
+.wrapper, .settings, Dialog section, .glass-card {
+    background-color: #000;
+    border: var(--border-thick);
+    box-shadow: var(--shadow-hard);
+    border-radius: var(--radius);
+    padding: 24px !important;
+    color: white;
 }
 
-input[type="text"],
-input[type="checkbox"] {
-    background-color: rgb(var(--bg_h));
-    color: rgb(var(--fg));
+/* Hover effect */
+.wrapper:hover, .glass-card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: var(--shadow-hard-hover);
+    border-color: #34d399;
 }
 
-input[type="text"]:focus {
-    outline: 2px solid rgb(var(--primary));
+/* Nav */
+nav {
+    background: #000;
+    border: var(--border-thick);
+    box-shadow: var(--shadow-hard);
+    border-radius: var(--radius);
+    padding: 15px;
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+nav h1, nav a {
+    text-shadow: 2px 2px 0px #000;
+    color: white !important;
 }
 
 hr {
-    height: 2px;
-    background: rgb(var(--primary));
-    border: 0;
+    display: none !important;
+}
+
+/* Buttons */
+button, .upload-label, .support-btn {
+    background: #000;
+    color: #fff;
+    border: var(--border-thick);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-hard);
+    font-weight: 800;
+    padding: 12px 24px;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    text-transform: uppercase;
+    font-family: 'Archivo Black', sans-serif;
+    letter-spacing: 1px;
+}
+
+button:hover, .upload-label:hover, .support-btn:hover {
+    background: #fff;
+    color: #000;
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px 0px #34d399;
+}
+
+button:active, .upload-label:active {
+    transform: translate(2px, 2px);
     box-shadow: none;
 }
 
-table {
-    background-color: rgb(var(--bg0));
-    border-collapse: separate;
-    border-spacing: 6px;
+.upload-label.secondary {
+    background: #18181b;
+    border-style: dashed;
 }
 
-td,
-th {
-    background-color: rgb(var(--bg2));
-    padding: 5px 8px;
-    border: 0;
-    box-shadow: none;
-    color: rgb(var(--fg));
+.upload-label.secondary:hover {
+    background: #27272a;
+    border-style: solid;
 }
 
+/* Inputs */
+input[type="text"], input[type="password"], textarea, select {
+    background-color: #000;
+    border: var(--border-thick);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-hard);
+    padding: 12px 16px;
+    color: #fff;
+    width: 100%;
+    outline: none;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.1s;
+}
+
+input:focus {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px 0px #ec4899; /* Pink shadow on focus */
+    border-color: #ec4899;
+}
+
+/* File List */
+.file, .upload-item {
+    background-color: #000;
+    border: var(--border-thick);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-hard);
+    padding: 15px;
+    margin-bottom: 15px;
+    transition: transform 0.1s;
+}
+
+.file:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 5px 5px 0px 0px #34d399;
+}
+
+/* Modal / Pre-upload */
 dialog {
-    background-color: rgb(var(--bg_h));
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
 }
 
-.upload-label {
-    box-shadow: 5px 5px 0 rgb(var(--primary));
+dialog::backdrop {
+    background: rgba(0, 0, 0, 0.9); 
+    backdrop-filter: blur(2px);
 }
 
-.file .details {
-    box-shadow: none;
-    border: 2px solid rgb(var(--primary));
+.preupload {
+    gap: 20px !important;
+    max-width: 500px !important;
+    width: 90vw;
 }
 
-.link {
-    background-color: rgb(var(--bg));
-    color: rgb(var(--fg2));
+.preupload-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px !important;
+    max-height: 60vh;
+    padding: 10px;
 }
 
-.thumbnail {
-    border: 2px solid rgb(var(--primary));
-    box-shadow: 3px 3px 0 rgb(var(--primary));
+.preupload-item {
+    background-color: #000;
+    border: var(--border-thick);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-hard);
+    padding: 15px;
+    border-color: #fff;
 }
 
-.settings summary,
-.settings .container,
-.settings .option {
-    border: 0;
-    box-shadow: none;
-    background-color: transparent;
+.preupload-row {
+    margin-bottom: 15px;
+    align-items: center;
+    display: flex;
+    gap: 15px;
+}
+
+.preupload-label {
+    min-width: 70px;
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    color: #4ade80;
+}
+
+.preupload-input {
+    box-shadow: none !important; 
+    border: 2px solid #3f3f46 !important;
+}
+
+.preupload-input:focus {
+    border-color: #4ade80 !important;
+    background: #000;
+}
+
+/* Settings */
+.settings {
+    width: fit-content;
+    background: #000;
+    transition: all 0.1s ease;
+}
+
+.settings:not([open]) {
+    padding: 0 !important;
+    border-radius: 50px;
+}
+
+.settings[open] {
+    padding: 24px !important;
 }
 
 .settings summary {
-    text-transform: uppercase;
+    padding: 12px 24px;
+    cursor: pointer;
     font-weight: 800;
-}
-
-.support-btn {
-    border: 2px solid rgb(var(--primary));
-    box-shadow: 3px 3px 0 rgb(var(--primary));
-    background: rgb(var(--button-blue));
-    background-image: none;
-}
-
-.name {
     text-transform: uppercase;
-    text-shadow: none;
+    color: white;
+    list-style: none;
 }
+
+/* Uploaders API Section */
+details {
+    background-color: #000;
+    border: var(--border-thick);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-hard);
+    margin-bottom: 24px;
+    transition: all 0.1s ease;
+}
+
+details[open] {
+    box-shadow: 6px 6px 0px 0px #ec4899; /* Pink shadow when open */
+    border-color: #ec4899;
+}
+
+summary {
+    padding: 18px 24px;
+    cursor: pointer;
+    font-weight: 800;
+    text-transform: uppercase;
+    border-bottom: 2px solid transparent;
+    transition: background 0.1s;
+    color: white;
+}
+
+summary:hover {
+    background: #18181b;
+}
+
+details[open] summary {
+    border-bottom: var(--border-thick);
+    background: #000;
+    color: #ec4899;
+}
+
+.api-block {
+    background-color: #09090b;
+    border: 2px solid #27272a;
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 2px 2px 0px 0px #27272a;
+}
+
+.api-card {
+    background-color: #000;
+    border: 2px solid #fff;
+    border-radius: 6px;
+    box-shadow: 3px 3px 0px 0px #fff;
+    padding: 16px;
+    transition: transform 0.1s;
+}
+
+.api-card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 5px 5px 0px 0px #4ade80;
+    border-color: #4ade80;
+}
+
+.codeblock, pre {
+    background: #000 !important;
+    border: 2px solid #4ade80 !important; /* Green terminal border */
+    border-radius: 4px;
+    padding: 14px !important;
+    font-family: 'JetBrains Mono', monospace;
+    color: #4ade80; /* Hacker green text */
+    box-shadow: 4px 4px 0px 0px #004400;
+}
+
+/* Tables */
+details th {
+    color: #ec4899;
+    border-bottom: 3px solid #fff;
+    padding: 12px;
+    text-transform: uppercase;
+    font-weight: 900;
+}
+
+details td {
+    padding: 12px;
+    border-bottom: 1px solid #3f3f46;
+    font-weight: 600;
+    color: #e4e4e7;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 12px; }
+::-webkit-scrollbar-track { background: #000; border-left: 2px solid #fff; }
+::-webkit-scrollbar-thumb { 
+    background: #fff; 
+    border: 2px solid #000;
+}
+::-webkit-scrollbar-thumb:hover { background: #4ade80; }

@@ -64,162 +64,35 @@ nav {
     border: var(--border-thick);
     box-shadow: var(--shadow-hard);
     border-radius: var(--radius);
-    padding: 15px;
+    padding: 15px 20px; /* More padding */
     margin-bottom: 30px;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start; /* Align left */
+    gap: 10px;
     align-items: center;
+    flex-wrap: wrap; /* Prevent overflow */
 }
 
-/* Ensure branding text fits */
-nav h1, nav a {
-    text-shadow: none !important;
-    color: black !important;
-}
-
-hr {
-    display: none !important;
-}
-
-/* Buttons */
-button, .upload-label, .support-btn {
-    background: #fff;
-    color: #000;
-    border: var(--border-thick);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-hard);
-    font-weight: 800;
-    padding: 12px 24px;
-    cursor: pointer;
-    transition: all 0.1s ease;
-    text-transform: uppercase;
-    font-size: 0.9rem;
-    letter-spacing: 0.5px;
-}
-
-button:hover, .upload-label:hover, .support-btn:hover {
-    background: #bbf7d0; /* Mint green highlight */
-    transform: translate(-2px, -2px);
-    box-shadow: var(--shadow-hard-hover);
-}
-
-button:active, .upload-label:active {
-    transform: translate(2px, 2px);
-    box-shadow: none;
-}
-
-.upload-label.secondary {
-    background: #e2e8f0;
-}
-
-.upload-label.secondary:hover {
-    background: #cbd5e1;
-}
-
-/* Inputs */
-input[type="text"], input[type="password"], textarea, select {
-    background-color: white;
-    border: var(--border-thick);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-hard);
-    padding: 12px 16px;
-    color: black;
-    width: 100%;
-    outline: none;
-    font-weight: 600;
-    transition: all 0.1s;
-}
-
-input:focus {
-    transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0px 0px #000;
-    background: #fff;
-}
-
-/* File List */
-.file, .upload-item {
-    background-color: white;
-    border: var(--border-thick);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-hard);
-    padding: 15px;
-    margin-bottom: 15px;
-    transition: transform 0.1s;
-}
-
-.file:hover {
-    transform: translate(-1px, -1px);
-    box-shadow: 5px 5px 0px 0px #000;
-}
-
-/* Modal / Pre-upload */
-dialog {
+/* Fix link hover in nav */
+nav a:hover {
     background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-}
-
-dialog::backdrop {
-    background: rgba(243, 205, 97, 0.9); /* Yellow overlay */
-    backdrop-filter: none;
-}
-
-.preupload {
-    gap: 20px !important;
-    max-width: 500px !important;
-    width: 90vw;
-}
-
-.preupload-list {
-    display: flex;
-    flex-direction: column;
-    gap: 15px !important;
-    max-height: 60vh;
-    padding: 10px;
-}
-
-.preupload-item {
-    background-color: #fff;
-    border: var(--border-thick);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-hard);
-    padding: 15px;
-}
-
-.preupload-row {
-    margin-bottom: 15px;
-    align-items: center;
-    display: flex;
-    gap: 15px;
-}
-
-.preupload-label {
-    min-width: 70px;
-    font-weight: 800;
-    text-transform: uppercase;
-    font-size: 0.8rem;
-}
-
-.preupload-input {
-    box-shadow: none !important; 
-    border: 2px solid #000 !important;
-}
-
-.preupload-input:focus {
-    background: #fdf6b2; /* Pale yellow focus */
+    text-decoration: underline;
+    color: black !important;
 }
 
 /* Settings */
 .settings {
-    width: fit-content;
+    width: 100%; /* Default to full width for consistency */
+    max-width: 800px; /* But cap it */
     background: white;
     transition: all 0.1s ease;
+    margin: 0 auto; /* Center it */
 }
 
 .settings:not([open]) {
     padding: 0 !important;
     border-radius: 50px;
+    width: fit-content; /* Only shrink when closed */
 }
 
 .settings[open] {

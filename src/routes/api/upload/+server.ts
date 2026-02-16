@@ -245,10 +245,6 @@ export const POST: RequestHandler = async ({ request, url }) => {
         }
     } else if (storage === "blob") {
         try {
-            const webStream: ReadableStream = (file.stream() as any);
-            const [uploadStream, hashStream] = (webStream as any).tee
-                ? (webStream as any).tee()
-                : [webStream, webStream];
             const hasher = crypto.createHash("md5");
             const hasherTransform = new Transform({
                 transform(chunk, _enc, cb) {
@@ -256,13 +252,21 @@ export const POST: RequestHandler = async ({ request, url }) => {
                     cb(null, chunk);
                 },
             });
+            
+            // Pipe connection: web stream -> node readable -> hasher -> upload
+            // We use the transformed stream for upload so it pulls data through the hasher
+            const sourceStream = Readable.fromWeb(file.stream() as any);
+            const uploadStream = sourceStream.pipe(hasherTransform);
+
             const token = env.BLOB_READ_WRITE_TOKEN || undefined;
-            const result = await put(`${id}${ext}`, uploadStream as any, {
+
+            // put() consumes the stream. As it reads, hasherTransform updates the hash.
+            const result = await put(`${id}${ext}`, uploadStream, {
                 access: "public",
                 addRandomSuffix: false,
                 token,
             });
-            await pipeline(Readable.fromWeb(hashStream as any), hasherTransform);
+
             checksum = hasher.digest("hex");
             filePath = result.url;
             blobPathname = (result as any).pathname || undefined;
@@ -286,10 +290,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
                 endpoint,
                 credentials: { accessKeyId, secretAccessKey },
             });
-            const webStream: ReadableStream = (file.stream() as any);
-            const [uploadStream, hashStream] = (webStream as any).tee
-                ? (webStream as any).tee()
-                : [webStream, webStream];
+
             const hasher = crypto.createHash("md5");
             const hasherTransform = new Transform({
                 transform(chunk, _enc, cb) {
@@ -297,16 +298,23 @@ export const POST: RequestHandler = async ({ request, url }) => {
                     cb(null, chunk);
                 },
             });
+
+            // Pipe connection: web stream -> node readable -> hasher -> upload
+            const sourceStream = Readable.fromWeb(file.stream() as any);
+            const uploadStream = sourceStream.pipe(hasherTransform);
+
             const keyObj = `${id}${ext}`;
+            
+            // S3 Upload consumes the stream
             await s3.send(
                 new PutObjectCommand({
                     Bucket: bucket,
                     Key: keyObj,
-                    Body: Readable.fromWeb(uploadStream as any) as any,
+                    Body: uploadStream,
                     ContentType: file.type || "application/octet-stream",
                 }),
             );
-            await pipeline(Readable.fromWeb(hashStream as any), hasherTransform);
+
             checksum = hasher.digest("hex");
             filePath = `r2://${bucket}/${keyObj}`;
             r2Bucket = bucket;

@@ -341,10 +341,54 @@ export const POST: RequestHandler = async ({ request, url }) => {
             filePath = result.url;
             blobPathname = (result as any).pathname || undefined;
         } catch (err) {
-            return json(
-                { error: 500, message: `Blob upload failed: ${err}` },
-                { status: 500, headers: corsHeaders(request) },
-            );
+            try {
+                const endpoint = process.env.R2_ENDPOINT || "";
+                const bucket = process.env.R2_BUCKET || "";
+                const accessKeyId = process.env.R2_ACCESS_KEY_ID || "";
+                const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY || "";
+                if (!endpoint || !bucket || !accessKeyId || !secretAccessKey) {
+                    return json(
+                        { error: 500, message: `Blob upload failed, R2 fallback unavailable: ${err}` },
+                        { status: 500, headers: corsHeaders(request) },
+                    );
+                }
+                const s3 = new S3Client({
+                    region: "auto",
+                    endpoint,
+                    credentials: { accessKeyId, secretAccessKey },
+                });
+                const webStream2: ReadableStream = (file.stream() as any);
+                const [uploadStream2, hashStream2] = (webStream2 as any).tee
+                    ? (webStream2 as any).tee()
+                    : [webStream2, webStream2];
+                const hasher2 = crypto.createHash("md5");
+                const hasherTransform2 = new Transform({
+                    transform(chunk, _enc, cb) {
+                        hasher2.update(chunk as Buffer);
+                        cb(null, chunk);
+                    },
+                });
+                const keyObj = `${id}${ext}`;
+                await s3.send(
+                    new PutObjectCommand({
+                        Bucket: bucket,
+                        Key: keyObj,
+                        Body: Readable.fromWeb(uploadStream2 as any) as any,
+                        ContentType: file.type || "application/octet-stream",
+                    }),
+                );
+                await pipeline(Readable.fromWeb(hashStream2 as any), hasherTransform2);
+                checksum = hasher2.digest("hex");
+                filePath = `r2://${bucket}/${keyObj}`;
+                r2Bucket = bucket;
+                r2Key = keyObj;
+                storage = "r2";
+            } catch (err2) {
+                return json(
+                    { error: 500, message: `Blob upload failed and R2 fallback failed: ${err2}` },
+                    { status: 500, headers: corsHeaders(request) },
+                );
+            }
         }
     } else if (storage === "r2") {
         try {

@@ -166,6 +166,55 @@ details {
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); border-radius: 4px; }
 
+/* Pre-upload Modal fixes */
+.preupload {
+    gap: 20px !important;
+}
+
+.preupload-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px !important;
+    max-height: 60vh;
+    padding: 5px; /* Space for shadow */
+}
+
+.preupload-item {
+    background: rgba(0, 0, 0, 0.2) !important;
+    border: 1px solid var(--glass-border) !important;
+    backdrop-filter: blur(10px);
+    border-radius: 12px !important;
+    padding: 15px !important;
+    box-shadow: none !important; /* Remove default hard shadow */
+}
+
+.preupload-row {
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.preupload-row:last-child {
+    margin-bottom: 0;
+}
+
+.preupload-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+    text-overflow: ellipsis;
+}
+
+/* Fix text overflow in modal */
+.preupload-label {
+    white-space: nowrap;
+}
+
 /* Text Shadows */
 h1 { text-shadow: 0 4px 10px rgba(0,0,0,0.3); font-weight: 800; }
 a { color: #fff; text-shadow: 0 0 5px rgba(255,255,255,0.5); }
+
+/* Headers */
+h1, h2, h3, summary {
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}

@@ -187,7 +187,7 @@ dialog section {
 }
 
 /* Apply Glass to the specific container */
-.preupload, .glass-card, .settings {
+.preupload, .glass-card {
     background: var(--glass-bg) !important;
     box-shadow: var(--glass-shadow);
     backdrop-filter: var(--glass-blur);
@@ -197,7 +197,44 @@ dialog section {
     border-top: 1px solid rgba(255,255,255,0.6) !important;
     border-left: 1px solid rgba(255,255,255,0.6) !important;
     color: rgb(var(--fg));
-    padding: 24px !important; /* Add padding here */
+    padding: 24px !important;
+}
+
+/* Settings Specifics - Fix "Too Big" issue */
+.settings {
+    background: var(--glass-bg) !important;
+    box-shadow: var(--glass-shadow);
+    backdrop-filter: var(--glass-blur);
+    border-radius: 16px !important;
+    border: 1px solid var(--glass-border) !important;
+    color: rgb(var(--fg));
+    width: fit-content;
+    transition: all 0.3s ease;
+}
+
+.settings:not([open]) {
+    padding: 0 !important; /* Remove padding when closed so it relies on summary padding */
+    border-radius: 50px !important; /* Pill shape when closed */
+}
+
+.settings[open] {
+    padding: 20px !important;
+    border-radius: 24px !important;
+}
+
+.settings summary {
+    padding: 10px 24px !important;
+    cursor: pointer;
+    font-weight: 600;
+    list-style: none; /* Remove triangle if desired, or keep */
+    transition: color 0.2s;
+}
+
+.settings:not([open]) summary {
+     /* Start of line adjustment for the arrow if keeping it */
+    display: flex;
+    align-items: center;
+    gap: 5px;
 }
 
 /* Pre-upload Modal fixes */

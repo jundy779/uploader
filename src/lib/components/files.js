@@ -14,7 +14,7 @@ export const loadFiles = () => {
     if (!filesVal) return;
     /** @type {Array<import('$lib/types.js').File>} */
     const files = JSON.parse(filesVal);
-    const filesFiltered = files.filter((file) => file.date > 1750291200000); // 2025-06-19T00:00:00.0Z
+    const filesFiltered = files.filter((file) => typeof file.date === "number" && Number.isFinite(file.date));
 
     uploadedFiles.update(() => {
         return filesFiltered
@@ -22,7 +22,6 @@ export const loadFiles = () => {
 };
 
 export const saveFiles = () => {
-    loadSettings();
     if (get(userSettings).rememberFileHistory !== true) return
     const sanitized = get(uploadedFiles).map((file) => {
         const copy = { ...file };

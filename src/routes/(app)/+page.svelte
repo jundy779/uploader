@@ -333,7 +333,7 @@
         xhr.addEventListener("error", (e) => {
             const hint =
                 dev && e.loaded === 0
-                    ? `\n\nHint: API backend tidak berjalan/terjangkau di ${apiBase || window.location.origin}. Jalankan backend API-nya, atau set VITE_API_BASE_URL ke base URL backend.`
+                    ? `\n\nHint: API backend is not running or unreachable at ${apiBase || window.location.origin}. Start the API backend, or set VITE_API_BASE_URL to the correct backend base URL.`
                     : "";
             retryUpload(
                 `Failed uploading "${file.name}": ${e.loaded} bytes transferred${hint}`,

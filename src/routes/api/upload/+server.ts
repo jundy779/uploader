@@ -187,11 +187,14 @@ export const POST: RequestHandler = async ({ request, url }) => {
     // --- End Optimization ---
 
     const ext = safeExt(fileName);
-    let storage =
+
+    // Determine if storage was explicitly requested by the caller
+    const explicitStorage =
         (typeof form.get("storage") === "string" ? String(form.get("storage")) : undefined) ||
         url.searchParams.get("storage") ||
-        env.UPLOADER_STORAGE_DEFAULT ||
-        "fs";
+        undefined;
+
+    let storage = explicitStorage || env.UPLOADER_STORAGE_DEFAULT || "fs";
 
     let filePath = "";
     let checksum = "";
@@ -200,22 +203,19 @@ export const POST: RequestHandler = async ({ request, url }) => {
     let r2Bucket: string | undefined = undefined;
     let r2Key: string | undefined = undefined;
 
-    // Auto dual for large files if not explicitly set
-    const isDual = (!url.searchParams.get("storage") && !(typeof form.get("storage") === "string")) && fileSize > dualThreshold;
-
     // Helper to create a stream from the buffer for services expecting streams
     const createStream = () => Readable.from(fileBuffer);
-    
-    // Logic Routing:
-    // 1. Optimized File (WebP) -> MongoDB (Reliable for medium size)
-    // 2. Large Original File (> 7MB) -> R2 (Cheap storage), fallback to MongoDB if fails
-    // 3. Small Original File -> Local FS
-    
-    // Check if file was actually optimized (type changed to webp)
-    const isOptimized = fileType === "image/webp" && file.type !== "image/webp"; 
 
-    if (isOptimized) {
-        // Option 1: Optimized file -> MongoDB
+    // Check if file was actually optimized (type changed to webp)
+    const isOptimized = fileType === "image/webp" && file.type !== "image/webp";
+
+    // Auto-routing only applies when the caller did NOT explicitly pick a storage backend.
+    // Priority: explicit > optimized-image > large-file > default.
+    if (explicitStorage) {
+        // Caller knows what they want; skip auto-routing entirely.
+        // Fall through to the per-storage blocks below.
+    } else if (isOptimized) {
+        // Optimized WebP -> MongoDB (reliable for medium-size blobs)
         storage = "mongodb";
         try {
             const { bucket, bucketName } = await getMongo();

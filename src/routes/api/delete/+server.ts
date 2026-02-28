@@ -1,19 +1,13 @@
 import { json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import { rm } from "node:fs/promises";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import path from "node:path";
-import { MongoClient, GridFSBucket, ObjectId } from "mongodb";
+import { ObjectId } from "mongodb";
 import { del } from "@vercel/blob";
 import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getMongo, getFileMetadata, deleteFileMetadata } from "$lib/db";
 
 import { env } from "$env/dynamic/private";
 
-const isVercel = Boolean(env.VERCEL || env.VERCEL_ENV);
-const dataDir = path.resolve(
-    env.UPLOADER_DATA_DIR || (isVercel ? "/tmp/uploader" : ".data/uploader"),
-);
 const rateLimitState = new Map<string, { count: number; resetAt: number }>();
 
 const getClientIp = (request: Request) => {
